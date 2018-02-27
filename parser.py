@@ -5,8 +5,8 @@ import sys
 tokens = scanner.tokens
 
 def p_program(p):
-    '''program : PROGRAM ID SEMICOLON optional_variables block'''
-    pass
+  '''program : '''
+  pass
 
 def p_optional_variables(p):
     '''optional_variables : variables
@@ -27,9 +27,17 @@ def p_more_variables(p):
                       | empty'''
     pass
 
-def p_type(p):
+def p_basic_type(p):
     '''type : INT
-            | FLOAT'''
+            | FLOAT
+            | CHAR
+            | BOOL'''
+    pass
+
+def p_compound_type(p):
+    '''type : STRUCT
+            | ARRAY
+            | POINTER'''
     pass
 
 def p_block(p):
