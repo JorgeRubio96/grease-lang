@@ -1,7 +1,6 @@
 import ply.lex as lex
 import sys
-
-stack_indentLevels = [0];
+import indents
 
 reserved = {
 'var': 'VAR',
@@ -40,19 +39,16 @@ reserved = {
 tokens = [
     'ID', 'CONST_INT', 'CONST_FLOAT', 'CONST_STR', 'CONST_CHAR','ARROW_HEAD', 
     'SEMICOLON', 'COLON', 'COMMA',
-    'OPEN_BLOCK', 'CLOSE_BLOCK', 'EQUALS',
+    'EQUALS', 'NEW_LINE','OPEN_BRACK','CLOSE_BRACK',
     'OPEN_PAREN', 'CLOSE_PAREN', 'PLUS', 'MINUS',
-    'TIMES', 'DIVIDE', 'AMP'
+    'TIMES', 'DIVIDE', 'AMP', 'INDENT', 'DEDENT'
     ] + list(reserved.values())
-
-
-t_ignore = '\t\n '
 
 t_SEMICOLON = r'\;'
 t_COLON = r'\:'
 t_COMMA = r'\,'
-t_OPEN_BLOCK = r'\{'
-t_CLOSE_BLOCK = r'\}'
+t_OPEN_BRACK = r'\['
+t_CLOSE_BRACK = r'\]'
 t_EQUALS = r'\='
 t_OPEN_PAREN = r'\('
 t_CLOSE_PAREN = r'\)'
@@ -62,6 +58,7 @@ t_TIMES = r'\*'
 t_DIVIDE = r'\/'
 t_AMP = r'\&'
 t_ARROW_HEAD = r'\>'
+t_ignore = r''
 
 def t_ID(t):
     r'[a-zA-Z][a-zA-Z0-9]*'
@@ -87,10 +84,15 @@ def t_CONST_CHAR(t):
     r'\'[a-zA-Z ]\''
     t.value = t.value[1:-1]
     return t
-    
+
+def t_NEW_LINE(t):
+    r'\n[\t ]*'
+    t.value = len(t.value) - 1
+    return t
+
 def t_error(t):
     print("Illegal character '%s'" % t.value[0])
     sys.exit()
 
 
-lexer = lex.lex()
+lexer = indents.Indents(lex.lex())
