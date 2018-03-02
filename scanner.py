@@ -1,6 +1,8 @@
 import ply.lex as lex
 import sys
 
+stack_indentLevels = [0];
+
 reserved = {
 'var': 'VAR',
 'float': 'FLOAT',
@@ -24,6 +26,7 @@ reserved = {
 'while':'WHILE',
 'for':'FOR',
 'alias':'ALIAS',
+'as':'AS',
 'gt': 'GT',
 'ge': 'GE',
 'lt': 'LT',
@@ -31,15 +34,17 @@ reserved = {
 'gt': 'GT',
 'eq': 'EQ',
 'not':'NOT',
+'from': 'FROM'
 }
 
 tokens = [
-    'ID', 'CONST_INT', 'CONST_REAL', 'CONST_STRING', 'CONST_CHAR',
-    'COMPARE', 'SEMICOLON', 'COLON', 'COMMA',
+    'ID', 'CONST_INT', 'CONST_FLOAT', 'CONST_STR', 'CONST_CHAR','ARROW_HEAD', 
+    'SEMICOLON', 'COLON', 'COMMA',
     'OPEN_BLOCK', 'CLOSE_BLOCK', 'EQUALS',
     'OPEN_PAREN', 'CLOSE_PAREN', 'PLUS', 'MINUS',
-    'TIMES', 'DIVIDE', 'STRUCT_ID', 
+    'TIMES', 'DIVIDE', 'AMP'
     ] + list(reserved.values())
+
 
 t_ignore = '\t\n '
 
@@ -55,29 +60,25 @@ t_PLUS = r'\+'
 t_MINUS = r'\-'
 t_TIMES = r'\*'
 t_DIVIDE = r'\/'
-t_COMPARE = r'(\<\>)|[\<\>]'
+t_AMP = r'\&'
+t_ARROW_HEAD = r'\>'
 
 def t_ID(t):
     r'[a-zA-Z][a-zA-Z0-9]*'
     t.type = reserved.get(t.value, 'ID')
     return t
 
-def t_STRUCT_ID(t):
-    r'[a-zA-Z][a-zA-Z0-9]*'
-    t.type = reserved.get(t.value, 'ID')
-    return t
-
 def t_CONST_INT(t):
-    r'[0-9]+'
+    r'[1-9][0-9]*'
     t.value = int(t.value)
     return t
 
-def t_CONST_REAL(t):
+def t_CONST_FLOAT(t):
     r'[0-9]+"."[0-9]+'
     t.value = float(t.value)
     return t
 
-def t_CONST_STRING(t):
+def t_CONST_STR(t):
     r'\"[a-zA-Z ]+\"'
     t.value = t.value[1:-1]
     return t
