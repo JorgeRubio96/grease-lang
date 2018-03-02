@@ -5,40 +5,126 @@ import sys
 tokens = scanner.tokens
 
 def p_program(p):
-    '''program : PROGRAM ID SEMICOLON optional_variables block'''
+    '''program : optional_imports optional_declarations main'''
     pass
 
-def p_optional_variables(p):
-    '''optional_variables : variables
+# Permite tener 0 o mas import statements
+# Left recursive
+def p_optional_imports(p):
+    '''optional_imports : optional_imports import
+                        | empty'''
+    pass
+
+def p_import(p):
+    '''import : IMPORT import_body'''
+
+def p_import_body(p):
+    '''import_body : ID optional_import_as NEW_LINE
+                   | FROM ID NEW_LINE INDENT ID import_more_ids NEW_LINE DEDENT'''
+    pass
+
+def p_optional_import_as(p):
+    '''optional_import_as : AS ID
                           | empty'''
     pass
 
-def p_variables(p):
-    '''variables : VAR ID more_id COLON type SEMICOLON more_variables'''
+def p_import_more_ids(p):
+    '''import_more_ids : import_more_ids COMMA ID NEW_LINE
+                       | empty'''
     pass
 
-def p_more_id(p):
-    '''more_id : COMMA ID more_id
-               | empty'''
+# Permite tener 0 o mas declaraciones
+def p_optional_declarations(p):
+    '''optional_declarations : optional_declarations declaration
+                             | empty'''
     pass
 
-def p_more_variables(p):
-    '''more_variables : ID more_id COLON type SEMICOLON more_variables
-                      | empty'''
+def p_declaration(p):
+    '''declaration : variable | function | alias | struct | interface'''
     pass
 
-def p_type(p):
-    '''type : INT
-            | FLOAT'''
+def p_variable(p):
+    '''variable : VAR ID variable_body NEW_LINE'''
+    pass
+
+def p_variable_body(p):
+    '''varibale_body : COLON compound_type
+                     | EQUALS expression'''
+    pass
+
+def p_function(p):
+    '''function : FN optional_method_declaration ID
+                  OPEN_PAREN optional_params CLOSE_PAREN
+                  optional_return_type NEW_LINE block'''
+    pass
+
+def p_optional_method_declaration(p):
+    '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
+                                   | empty'''
+    pass
+
+def p_optional_params(p):
+    '''optional_params : param more_params
+                       | empty'''
+    pass
+
+def p_param(p):
+    '''param: ID COLON basic_type'''
+    pass
+
+def p_more_params(p):
+    '''more_params : more_params COMMA param
+                   | empty'''
+    pass
+
+def p_optional_return_type(p):
+    '''optional_return_type : COLON basic_type
+                            | empty'''
+    pass
+
+def p_alias(p):
+    '''alias : ALIAS compound_type AS ID NEW_LINE'''
+    pass
+
+def p_struct(p):
+    '''struct : STRUCT ID optional_struct_interfaces NEW_LINE
+                INDENT struct_member struct_more_members DEDENT'''
+    pass
+
+# Maybe later: Multiple interfaces per struct
+def p_optional_struct_interfaces(p):
+    '''optional_struct_interfaces : COLON ID
+                                  | empty'''
+    pass
+
+def p_struct_member(p):
+    '''struct_member : ID COLON basic_type NEW_LINE'''
+    pass
+
+def p_struct_more_members(p):
+    '''struct_more_members : struct_more_members struct_member
+                           | empty'''
+    pass
+
+def p_interface(p):
+    '''interface : INTERFACE ID NEW_LINE INDENT interface_function DEDENT'''
+    pass
+
+def p_interface_function(p):
+    '''interface_function : FN ID OPEN_PAREN optional_params CLOSE_PAREN'''
     pass
 
 def p_block(p):
-    '''block : OPEN_BLOCK inner CLOSE_BLOCK'''
+    '''block : INDENT block_body DEDENT'''
     pass
 
-def p_inner(p):
-    '''inner : statement inner
-             | empty'''
+def p_block_body(p):
+    '''block_body : block_body block_line NEW_LINE
+                  | empty'''
+    pass
+
+def p_block_line(p):
+    '''block_line : statement | variable'''
     pass
 
 def p_statement(p):
