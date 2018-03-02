@@ -1,0 +1,33 @@
+program
+(imports)?[declarations][main]
+
+declarations
+[variable | function | alias | struct | interface]*
+
+imports
+import [id [as id]? \n] | import [from id \n ident id (. \n id)* \n dedent]
+
+variable
+var id [\: type | \= expr ] \n
+
+basic_type
+Int| Char | Book | Float 
+
+compound_type
+Struct | Array | Pointer
+
+alias
+alias type as id
+
+Struct 
+struct id (: id)? \n indent [id \: basic_type \n]+ dedent
+
+array
+\[basic_type\; const_int [\, const_int]* \]
+
+pointer
+type \*
+
+function
+fn \( id \: type \) id \( [id \: type \,]* \)[\: type]? \n block
+

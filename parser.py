@@ -113,6 +113,19 @@ def p_interface(p):
 def p_interface_function(p):
     '''interface_function : FN ID OPEN_PAREN optional_params CLOSE_PAREN'''
     pass
+    
+def p_basic_type(p):
+    '''type : INT
+            | FLOAT
+            | CHAR
+            | BOOL'''
+    pass
+
+def p_compound_type(p):
+    '''type : STRUCT
+            | ARRAY
+            | POINTER'''
+    pass
 
 def p_block(p):
     '''block : INDENT block_body DEDENT'''
