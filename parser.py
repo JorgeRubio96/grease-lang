@@ -113,18 +113,36 @@ def p_interface(p):
 def p_interface_function(p):
     '''interface_function : FN ID OPEN_PAREN optional_params CLOSE_PAREN'''
     pass
-    
+
 def p_basic_type(p):
     '''type : INT
             | FLOAT
             | CHAR
-            | BOOL'''
+            | BOOL
+            | pointer'''
     pass
 
 def p_compound_type(p):
-    '''type : STRUCT
-            | ARRAY
-            | POINTER'''
+    '''type : struct_id
+            | array
+            | basic_type'''
+    pass
+
+def p_pointer(p):
+    '''pointer : compound_type TIMES'''
+    pass
+
+def p_array(p):
+    '''array : OPEN_BRACK basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
+    pass
+
+def p_array_more_dimens(p):
+    '''array_more_dimens : array_more_dimens COMMA CONST_INT
+                         | empty'''
+    pass
+
+def p_struct_id(p):
+    '''struct_id : ID'''
     pass
 
 def p_block(p):
@@ -132,7 +150,7 @@ def p_block(p):
     pass
 
 def p_block_body(p):
-    '''block_body : block_body block_line NEW_LINE
+    '''block_body : block_body block_line
                   | empty'''
     pass
 
@@ -141,37 +159,42 @@ def p_block_line(p):
     pass
 
 def p_statement(p):
-    '''statement : assignment
-                 | conditional
-                 | printing'''
+    '''statement : statement_body NEW_LINE'''
+    pass
+
+def p_statement_body(p):
+    '''statement_body : assignment
+                      | condition
+                      | print
+                      | scan
+                      | cycle
+                      | RETURN expression
+                      | fn_call'''
     pass
 
 def p_assignment(p):
-    '''assignment : ID EQUALS expression SEMICOLON'''
+    '''assignment : sub_struct EQUALS expression'''
     pass
 
-def p_conditional(p):
-    '''conditional : IF OPEN_PAREN expression CLOSE_PAREN block optional_else SEMICOLON'''
+def p_condition(p):
+    '''condition : IF expression COLON NEW_LINE block optional_else'''
     pass
 
 def p_optional_else(p):
-    '''optional_else : ELSE block
+    '''optional_else : ELSE NEW_LINE block
                      | empty'''
     pass
 
-def p_printing(p):
-    '''printing : PRINT OPEN_PAREN print_parameter CLOSE_PAREN SEMICOLON'''
+def p_cycle(p):
+    '''cycle : WHILE expression COLON NEW_LINE block'''
     pass
 
-def p_print_parameter(p):
-    '''print_parameter : CONST_STRING print_more
-                       | expression print_more'''
+def p_print(p):
+    '''print : PRINT expression'''
     pass
 
-def p_print_more(p):
-    '''print_more : COMMA print_parameter
-                  | empty'''
-    pass
+def p_scan(p):
+    '''scan : SCAN sub_struct'''
 
 def p_expression(p):
     '''expression : logic_expr
