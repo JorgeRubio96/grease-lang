@@ -4,8 +4,6 @@ import indents
 
 reserved = {
 'var': 'VAR',
-'float': 'FLOAT',
-'print': 'PRINT',
 'if': 'IF',
 'else': 'ELSE',
 'scan': 'SCAN',
@@ -30,7 +28,6 @@ reserved = {
 'ge': 'GE',
 'lt': 'LT',
 'le': 'LE',
-'gt': 'GT',
 'eq': 'EQ',
 'not':'NOT',
 'from': 'FROM',

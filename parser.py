@@ -40,7 +40,11 @@ def p_optional_declarations(p):
     pass
 
 def p_declaration(p):
-    '''declaration : variable | function | alias | struct | interface'''
+    '''declaration : variable
+                   | function
+                   | alias
+                   | struct
+                   | interface'''
     pass
 
 def p_variable(p):
@@ -53,9 +57,7 @@ def p_variable_body(p):
     pass
 
 def p_function(p):
-    '''function : FN optional_method_declaration ID
-                  OPEN_PAREN optional_params CLOSE_PAREN
-                  optional_return_type NEW_LINE block'''
+    '''function : FN optional_method_declaration ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE block'''
     pass
 
 def p_optional_method_declaration(p):
@@ -69,7 +71,7 @@ def p_optional_params(p):
     pass
 
 def p_param(p):
-    '''param: ID COLON basic_type'''
+    '''param : ID COLON basic_type'''
     pass
 
 def p_more_params(p):
@@ -87,8 +89,7 @@ def p_alias(p):
     pass
 
 def p_struct(p):
-    '''struct : STRUCT ID optional_struct_interfaces NEW_LINE
-                INDENT struct_member struct_more_members DEDENT'''
+    '''struct : STRUCT ID optional_struct_interfaces NEW_LINE INDENT struct_member struct_more_members DEDENT'''
     pass
 
 # Maybe later: Multiple interfaces per struct
@@ -155,7 +156,8 @@ def p_block_body(p):
     pass
 
 def p_block_line(p):
-    '''block_line : statement | variable'''
+    '''block_line : statement
+                  | variable'''
     pass
 
 def p_statement(p):
@@ -234,17 +236,13 @@ def p_comparisson_operator(p):
 
 def p_arith_expr(p):
   '''arith_expr : term 
-                |arith_expr optional_operation term'''
+                | arith_expr optional_operation term'''
   pass
 
 def p_optional_operation(p):
   '''optional_operation : PLUS
                         | MINUS'''
   pass
-
-def p_value(p):
-    '''value : term optional_add_sub'''
-    pass
 
 def p_optional_add_sub(p):
     '''optional_add_sub : PLUS value
@@ -277,10 +275,6 @@ def p_number(p):
               | ID'''
     pass
 
-def p_empty(p):
-    'empty :'
-    pass
-
 def p_value(p):
     '''value : OPEN_PAREN expression CLOSE_PAREN
              | fn_call
@@ -288,54 +282,57 @@ def p_value(p):
              | optional_amp sub_struct'''
     pass
 
-
 def p_optional_amp(p):
-  '''optional_amp: AMP
-                 | empty'''
+  '''optional_amp : AMP
+                  | empty'''
   pass
 
 def p_fn_call(p):
-  '''fn_call: sub_struct optional_fn_call ID OPEN_PAREN optional_expression CLOSE_PAREN'''
+  '''fn_call : sub_struct optional_fn_call ID OPEN_PAREN optional_expression CLOSE_PAREN'''
   pass
 
 def p_optional_fn_call(p):
-  '''optional_fn_call: DOT
-                     | MINUS ARROW_HEAD'''
+  '''optional_fn_call : DOT
+                      | MINUS ARROW_HEAD'''
   pass
 
 def p_optional_expression(p):
-  '''optional_expression: optional_expression_add
-                        | empty'''
+  '''optional_expression : optional_expression_add
+                         | empty'''
   pass
 
 def p_optional_expression_add(p):
-  '''optional_expression_add: optional_expression_add COMMA expression
-                            | empty'''
+  '''optional_expression_add : optional_expression_add COMMA expression
+                             | empty'''
   pass
 
 def p_sub_struct(p):
-  '''sub_struct: optional_pointer more_sub_structs'''
+  '''sub_struct : optional_pointer more_sub_structs'''
   pass
 def p_optional_pointer(p):
-  '''optional_pointer: TIMES
-                     | empty'''
+  '''optional_pointer : TIMES
+                      | empty'''
   pass
 
 def p_more_sub_structs(p):
-  '''more_sub_structs: more_subs_structs optional_fn_call ID OPEN_BRACK optional_expression_add CLOSE_BRACK'''
+  '''more_sub_structs : more_subs_structs optional_fn_call ID OPEN_BRACK optional_expression_add CLOSE_BRACK'''
   pass
 
 def p_main(p):
-  '''main: MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
+  '''main : MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
   pass
 
 def p_const(p):
-  '''const: CONST_INT
-          | CONST_FLOAT
-          | CONST_BOOL
-          | CONST_CHAR
-          | CONST_STR'''
+  '''const : CONST_INT
+           | CONST_CHAR
+           | CONST_STR
+           | CONST_FLOAT
+           | CONST_BOOL'''
   pass
+
+def p_empty(p):
+    'empty :'
+    pass
 
 def p_error(p):
     print("Syntax error at '%s'" % p.value)
