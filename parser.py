@@ -174,13 +174,50 @@ def p_print_more(p):
     pass
 
 def p_expression(p):
-    '''expression : value optional_comparison'''
+    '''expression : logic_expr
+                  | expression OR logic_expr'''
     pass
 
-def p_optional_comparison(p):
-    '''optional_comparison : COMPARE value
-                           | empty'''
-    pass
+def p_logic_expr(p):
+  '''logic_expr : negation
+                | logic_expr AND negation'''
+  pass
+
+def p_negation(p):
+  '''negation : optional_not rel_expr'''
+  pass
+
+def p_optional_not(p):
+  '''optional_not : NOT
+                  | empty'''
+  pass
+
+def p_rel_expr(p):
+  '''rel_expr : arith_expr optional_comparisson'''
+  pass
+
+def p_optional_comparisson(p):
+  '''optional_comparisson : comparisson_operator arith_expr
+                          | empty'''
+  pass
+
+def p_comparisson_operator(p):
+  '''comparisson_operator : EQ
+                          | GT
+                          | LT
+                          | GE
+                          | LE'''
+  pass
+
+def p_arith_expr(p):
+  '''arith_expr : term 
+                |arith_expr optional_operation term'''
+  pass
+
+def p_optional_operation(p):
+  '''optional_operation : PLUS
+                        | MINUS'''
+  pass
 
 def p_value(p):
     '''value : term optional_add_sub'''
@@ -203,13 +240,11 @@ def p_optional_mult_div(p):
     pass
 
 def p_factor(p):
-    '''factor : OPEN_PAREN expression CLOSE_PAREN
-              | optional_sign number'''
+    '''factor : optional_sign value'''
     pass
 
 def p_optional_sign(p):
-    '''optional_sign : PLUS
-                     | MINUS
+    '''optional_sign : MINUS
                      | empty'''
     pass
 
@@ -222,6 +257,62 @@ def p_number(p):
 def p_empty(p):
     'empty :'
     pass
+
+def p_value(p):
+    '''value : OPEN_PAREN expression CLOSE_PAREN
+             | fn_call
+             | const
+             | optional_amp sub_struct'''
+    pass
+
+
+def p_optional_amp(p):
+  '''optional_amp: AMP
+                 | empty'''
+  pass
+
+def p_fn_call(p):
+  '''fn_call: sub_struct optional_fn_call ID OPEN_PAREN optional_expression CLOSE_PAREN'''
+  pass
+
+def p_optional_fn_call(p):
+  '''optional_fn_call: DOT
+                     | MINUS ARROW_HEAD'''
+  pass
+
+def p_optional_expression(p):
+  '''optional_expression: optional_expression_add
+                        | empty'''
+  pass
+
+def p_optional_expression_add(p):
+  '''optional_expression_add: optional_expression_add COMMA expression
+                            | empty'''
+  pass
+
+def p_sub_struct(p):
+  '''sub_struct: optional_pointer more_sub_structs'''
+  pass
+def p_optional_pointer(p):
+  '''optional_pointer: TIMES
+                     | empty'''
+  pass
+
+def p_more_sub_structs(p):
+  '''more_sub_structs: more_subs_structs optional_fn_call ID OPEN_BRACK optional_expression_add CLOSE_BRACK'''
+  pass
+
+def p_main(p):
+  '''main: MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
+  pass
+
+def p_const(p):
+  '''const: CONST_INT
+          | CONST_FLOAT
+          | CONST_BOOL
+          | CONST_CHAR
+          | CONST_STR'''
+  pass
 
 def p_error(p):
     print("Syntax error at '%s'" % p.value)

@@ -33,17 +33,19 @@ reserved = {
 'gt': 'GT',
 'eq': 'EQ',
 'not':'NOT',
-'from': 'FROM'
+'from': 'FROM',
+'main': 'MAIN'
 }
 
 tokens = [
     'ID', 'CONST_INT', 'CONST_FLOAT', 'CONST_STR', 'CONST_CHAR','ARROW_HEAD', 
-    'SEMICOLON', 'COLON', 'COMMA',
+    'SEMICOLON', 'COLON', 'COMMA', 'DOT',
     'EQUALS', 'NEW_LINE','OPEN_BRACK','CLOSE_BRACK',
     'OPEN_PAREN', 'CLOSE_PAREN', 'PLUS', 'MINUS',
     'TIMES', 'DIVIDE', 'AMP', 'INDENT', 'DEDENT'
     ] + list(reserved.values())
 
+t_DOT = r'\.'
 t_SEMICOLON = r'\;'
 t_COLON = r'\:'
 t_COMMA = r'\,'
@@ -83,6 +85,15 @@ def t_CONST_STR(t):
 def t_CONST_CHAR(t):
     r'\'[a-zA-Z ]\''
     t.value = t.value[1:-1]
+    return t
+
+def t_CONST_BOOL(t):
+    r'[true | false]'
+    if t.value=='true':
+        t.value = True
+    else:
+        t.value = False
+   
     return t
 
 def t_NEW_LINE(t):
