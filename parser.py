@@ -52,7 +52,7 @@ def p_variable(p):
     pass
 
 def p_variable_body(p):
-    '''varibale_body : COLON compound_type
+    '''variable_body : COLON compound_type
                      | EQUALS expression'''
     pass
 
@@ -116,7 +116,7 @@ def p_interface_function(p):
     pass
 
 def p_basic_type(p):
-    '''type : INT
+    '''basic_type : INT
             | FLOAT
             | CHAR
             | BOOL
@@ -124,7 +124,7 @@ def p_basic_type(p):
     pass
 
 def p_compound_type(p):
-    '''type : struct_id
+    '''compound_type : struct_id
             | array
             | basic_type'''
     pass
@@ -236,19 +236,14 @@ def p_comparisson_operator(p):
 
 def p_arith_expr(p):
   '''arith_expr : term 
-                | arith_expr optional_operation term'''
+                | arith_expr optional_operation'''
   pass
 
 def p_optional_operation(p):
-  '''optional_operation : PLUS
-                        | MINUS'''
-  pass
-
-def p_optional_add_sub(p):
-    '''optional_add_sub : PLUS value
-                        | MINUS value
+  '''optional_operation : PLUS arith_expr
+                        | MINUS arith_expr
                         | empty'''
-    pass
+  pass
 
 def p_term(p):
     '''term : factor optional_mult_div'''
@@ -269,12 +264,6 @@ def p_optional_sign(p):
                      | empty'''
     pass
 
-def p_number(p):
-    '''number : CONST_INT
-              | CONST_REAL
-              | ID'''
-    pass
-
 def p_value(p):
     '''value : OPEN_PAREN expression CLOSE_PAREN
              | fn_call
@@ -283,52 +272,62 @@ def p_value(p):
     pass
 
 def p_optional_amp(p):
-  '''optional_amp : AMP
-                  | empty'''
-  pass
+    '''optional_amp : AMP
+                    | empty'''
+    pass
 
 def p_fn_call(p):
-  '''fn_call : sub_struct optional_fn_call ID OPEN_PAREN optional_expression CLOSE_PAREN'''
-  pass
+    '''fn_call : sub_struct optional_fn_call ID OPEN_PAREN optional_expression CLOSE_PAREN'''
+    pass
 
 def p_optional_fn_call(p):
-  '''optional_fn_call : DOT
-                      | MINUS ARROW_HEAD'''
-  pass
+    '''optional_fn_call : DOT
+                        | MINUS ARROW_HEAD'''
+    pass
 
 def p_optional_expression(p):
-  '''optional_expression : optional_expression_add
-                         | empty'''
-  pass
+    '''optional_expression : optional_expression_add
+                            | empty'''
+    pass
 
 def p_optional_expression_add(p):
-  '''optional_expression_add : optional_expression_add COMMA expression
-                             | empty'''
-  pass
+    '''optional_expression_add : optional_expression_add COMMA expression
+                                | empty'''
+    pass
 
 def p_sub_struct(p):
-  '''sub_struct : optional_pointer more_sub_structs'''
-  pass
-def p_optional_pointer(p):
-  '''optional_pointer : TIMES
-                      | empty'''
-  pass
+    '''sub_struct : optional_pointer sub_struct_body'''
+    pass
 
-def p_more_sub_structs(p):
-  '''more_sub_structs : more_subs_structs optional_fn_call ID OPEN_BRACK optional_expression_add CLOSE_BRACK'''
-  pass
+def p_optional_pointer(p):
+    '''optional_pointer : TIMES
+                        | empty'''
+    pass
+
+def p_sub_struct_body(p):
+    '''sub_struct_body : ID optional_sub_index more_sub_struct '''
+    pass
+
+def p_more_sub_struct(p):
+    '''more_sub_struct : more_sub_struct sub_struct_body optional_fn_call
+                       | empty'''
+    pass
+
+def p_optional_sub_index(p):
+    '''optional_sub_index : OPEN_BRACK expression optional_expression_add CLOSE_BRACK'''
+    pass
 
 def p_main(p):
-  '''main : MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
-  pass
+    '''main : MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
+    pass
 
 def p_const(p):
-  '''const : CONST_INT
-           | CONST_CHAR
-           | CONST_STR
-           | CONST_FLOAT
-           | CONST_BOOL'''
-  pass
+    '''const : CONST_INT
+            | CONST_CHAR
+            | CONST_STR
+            | CONST_REAL
+            | CONST_BOOL'''
+    pass
 
 def p_empty(p):
     'empty :'
@@ -338,7 +337,7 @@ def p_error(p):
     print("Syntax error at '%s'" % p.value)
     sys.exit()
 
-parser = yacc.yacc()
+parser = yacc.yacc(debug=True)
 
 
 data = ''

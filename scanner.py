@@ -3,42 +3,39 @@ import sys
 import indents
 
 reserved = {
-'var': 'VAR',
-'if': 'IF',
-'else': 'ELSE',
-'scan': 'SCAN',
-'print': 'PRINT',
-'and': 'AND',
-'or': 'OR',
-'Boolean': 'BOOLEAN',
-'Int': 'INT',
-'Float': 'FLOAT',
-'Char': 'CHAR',
-'true': 'TRUE',
-'false': 'FALSE',
-'fn': 'FUNCTION',
-'interface': 'INTERFACE',
-'import': 'IMPORT',
-'struct':'STRUCT',
-'while':'WHILE',
-'for':'FOR',
-'alias':'ALIAS',
-'as':'AS',
-'gt': 'GT',
-'ge': 'GE',
-'lt': 'LT',
-'le': 'LE',
-'eq': 'EQ',
-'not':'NOT',
-'from': 'FROM',
-'main': 'MAIN'
+    'var': 'VAR',
+    'if': 'IF',
+    'else': 'ELSE',
+    'scan': 'SCAN',
+    'print': 'PRINT',
+    'and': 'AND',
+    'or': 'OR',
+    'Boolean': 'BOOL',
+    'Int': 'INT',
+    'Float': 'FLOAT',
+    'Char': 'CHAR',
+    'fn': 'FN',
+    'interface': 'INTERFACE',
+    'import': 'IMPORT',
+    'struct':'STRUCT',
+    'while':'WHILE',
+    'alias':'ALIAS',
+    'as':'AS',
+    'gt': 'GT',
+    'ge': 'GE',
+    'lt': 'LT',
+    'le': 'LE',
+    'eq': 'EQ',
+    'not':'NOT',
+    'from': 'FROM',
+    'main': 'MAIN',
+    'return': 'RETURN'
 }
 
 tokens = [
-    'ID', 'CONST_INT', 'CONST_FLOAT', 'CONST_STR', 'CONST_CHAR','ARROW_HEAD', 
-    'SEMICOLON', 'COLON', 'COMMA', 'DOT',
-    'EQUALS', 'NEW_LINE','OPEN_BRACK','CLOSE_BRACK',
-    'OPEN_PAREN', 'CLOSE_PAREN', 'PLUS', 'MINUS',
+    'ID', 'CONST_INT', 'CONST_REAL', 'CONST_STR', 'CONST_CHAR', 'CONST_BOOL',
+    'ARROW_HEAD', 'SEMICOLON', 'COLON', 'COMMA', 'DOT', 'EQUALS', 'NEW_LINE',
+    'OPEN_BRACK','CLOSE_BRACK', 'OPEN_PAREN', 'CLOSE_PAREN', 'PLUS', 'MINUS',
     'TIMES', 'DIVIDE', 'AMP', 'INDENT', 'DEDENT'
     ] + list(reserved.values())
 
@@ -69,7 +66,7 @@ def t_CONST_INT(t):
     t.value = int(t.value)
     return t
 
-def t_CONST_FLOAT(t):
+def t_CONST_REAL(t):
     r'[0-9]+"."[0-9]+'
     t.value = float(t.value)
     return t
@@ -103,4 +100,4 @@ def t_error(t):
     sys.exit()
 
 
-lexer = indents.Indents(lex.lex())
+lexer = indents.Indents(lex.lex(debug=True))
