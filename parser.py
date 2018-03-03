@@ -117,10 +117,10 @@ def p_interface_function(p):
 
 def p_basic_type(p):
     '''basic_type : INT
-            | FLOAT
-            | CHAR
-            | BOOL
-            | pointer'''
+                  | FLOAT
+                  | CHAR
+                  | BOOL
+                  | pointer'''
     pass
 
 def p_compound_type(p):
@@ -199,14 +199,21 @@ def p_scan(p):
     '''scan : SCAN sub_struct'''
 
 def p_expression(p):
-    '''expression : logic_expr
-                  | expression OR logic_expr'''
+    '''expression : logic_expr optional_or'''
+    pass
+
+def p_optional_or(p):
+    '''optional_or : OR expression
+                   | empty'''
     pass
 
 def p_logic_expr(p):
-  '''logic_expr : negation
-                | logic_expr AND negation'''
-  pass
+    '''logic_expr : negation optional_and'''
+    pass
+
+def p_optional_and(p):
+    '''optional_and : AND logic_expr
+                    | empty'''
 
 def p_negation(p):
   '''negation : optional_not rel_expr'''
@@ -218,25 +225,24 @@ def p_optional_not(p):
   pass
 
 def p_rel_expr(p):
-  '''rel_expr : arith_expr optional_comparisson'''
+  '''rel_expr : arith_expr optional_comparison'''
   pass
 
-def p_optional_comparisson(p):
-  '''optional_comparisson : comparisson_operator arith_expr
+def p_optional_comparison(p):
+  '''optional_comparison : comparison_operator rel_expr
                           | empty'''
   pass
 
-def p_comparisson_operator(p):
-  '''comparisson_operator : EQ
-                          | GT
-                          | LT
-                          | GE
-                          | LE'''
+def p_comparison_operator(p):
+  '''comparison_operator : EQ
+                         | GT
+                         | LT
+                         | GE
+                         | LE'''
   pass
 
 def p_arith_expr(p):
-  '''arith_expr : term 
-                | arith_expr optional_operation'''
+  '''arith_expr : term optional_operation'''
   pass
 
 def p_optional_operation(p):
@@ -268,12 +274,13 @@ def p_value(p):
     '''value : OPEN_PAREN expression CLOSE_PAREN
              | fn_call
              | const
-             | optional_amp sub_struct'''
+             | optional_pointer_op sub_struct'''
     pass
 
-def p_optional_amp(p):
-    '''optional_amp : AMP
-                    | empty'''
+def p_optional_pointer_op(p):
+    '''optional_pointer_op : AMP
+                           | TIMES
+                           | empty'''
     pass
 
 def p_fn_call(p):
@@ -286,7 +293,7 @@ def p_optional_fn_call(p):
     pass
 
 def p_optional_expression(p):
-    '''optional_expression : optional_expression_add
+    '''optional_expression : expression optional_expression_add
                             | empty'''
     pass
 
@@ -296,20 +303,11 @@ def p_optional_expression_add(p):
     pass
 
 def p_sub_struct(p):
-    '''sub_struct : optional_pointer sub_struct_body'''
-    pass
-
-def p_optional_pointer(p):
-    '''optional_pointer : TIMES
-                        | empty'''
-    pass
-
-def p_sub_struct_body(p):
-    '''sub_struct_body : ID optional_sub_index more_sub_struct '''
+    '''sub_struct : ID optional_sub_index more_sub_struct'''
     pass
 
 def p_more_sub_struct(p):
-    '''more_sub_struct : more_sub_struct sub_struct_body optional_fn_call
+    '''more_sub_struct : more_sub_struct sub_struct optional_fn_call
                        | empty'''
     pass
 
