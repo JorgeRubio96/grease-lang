@@ -1,8 +1,11 @@
 import ply.yacc as yacc
+import greaser
 import scanner
 import sys
 
 tokens = scanner.tokens
+greaser = greaser.Greaser()
+
 
 precedence = (
     ('left', 'PLUS', 'MINUS'),
@@ -56,16 +59,17 @@ def p_declaration(p):
 
 def p_variable(p):
     '''variable : VAR ID variable_body NEW_LINE'''
-    pass
+    # addVariable(id, type)
+    greaser.add_variable(p[2], p[3])
 
 def p_variable_body(p):
     '''variable_body : COLON compound_type
                      | EQUALS expression'''
-    pass
+    p[0] = p[2]
 
 def p_function(p):
     '''function : FN optional_method_declaration ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE block'''
-    pass
+    print(p[3])
 
 def p_optional_method_declaration(p):
     '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
@@ -136,14 +140,21 @@ def p_basic_type(p):
     pass
 
 def p_compound_type(p):
-    '''compound_type : struct_id
+    '''compound_type : struct_id found_struct
             | array
             | basic_type'''
-    pass
+    p[0] = p[1]
 
 def p_pointer(p):
     '''pointer : compound_type TIMES'''
     pass
+
+def p_found_struct(p):
+    '''found_struct : '''
+    if greaser.find_struct(p[-1]) is not None:
+        p[0] = greaser.find_struct(p[-1])
+    else:
+        raise SyntaxError
 
 def p_array(p):
     '''array : OPEN_BRACK basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
@@ -159,8 +170,18 @@ def p_struct_id(p):
     pass
 
 def p_block(p):
-    '''block : INDENT block_body DEDENT'''
+    '''block : INDENT open_scope block_body DEDENT close_scope'''
     pass
+
+def p_open_scope(p):
+    '''open_scope : '''
+    global greaser
+    greaser = greaser.open_scope()
+
+def p_close_scope(p):
+    '''close_scope : '''
+    global greaser
+    greaser = greaser.close_scope()
 
 def p_block_body(p):
     '''block_body : block_body block_line

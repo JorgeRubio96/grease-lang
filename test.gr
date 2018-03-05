@@ -17,11 +17,20 @@ fn (r: Rect) Perimeter(): Float
     return 2.0 * r.w + 2.0 * r.h
 
 fn main(): Int
+    var a: Int
+    var b: Int
+    var c = 0
+
+    scan a
+    scan b
+
     if a eq b:
-        return c
+        return 0
+
     var sqr: Rect
 
     while a lt b:
+        a = a + c
         c = c + 1
     
     sqr.x = 0
@@ -33,6 +42,8 @@ fn main(): Int
     print '\n'
     print "The perimeter is"
     print sqr.Perimeter()
+    
     if not a[1]->b[2]->c[3]->d[4] gt 2 and c lt b:
         print "Ded\n"
+
     return 0
