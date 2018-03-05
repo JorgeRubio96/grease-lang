@@ -1,4 +1,38 @@
-program test;
-var a : int;
+import Math as M
 
-{}
+interface Shape
+    fn Area(): Float
+    fn Perimeter(): Float
+
+struct Rect : Shape
+    x: Float
+    y: Float
+    w: Float
+    h: Float
+
+fn (r: Rect) Area(): Float
+    return r.w * r.h
+
+fn (r: Rect) Perimeter(): Float
+    return 2.0 * r.w + 2.0 * r.h
+
+fn main(): Int
+    if a eq b:
+        return c
+    var sqr: Rect
+
+    while a lt b:
+        c = c + 1
+    
+    sqr.x = 0
+    sqr.y = 0
+    scan sqr.w
+    scan sqr.h
+    print "The area is"
+    print sqr.Area()
+    print '\n'
+    print "The perimeter is"
+    print sqr.Perimeter()
+    if not a[1]->b[2]->c[3]->d[4] eq 2:
+        print "Ded\n"
+    return 0

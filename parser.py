@@ -4,6 +4,13 @@ import sys
 
 tokens = scanner.tokens
 
+precedence = (
+    ('left', 'PLUS', 'MINUS'),
+    ('left', 'TIMES', 'DIVIDE'),
+    ('right', 'UMINUS'),
+    ('left', 'DOT', 'ARROW')
+)
+
 def p_program(p):
     '''program : optional_imports optional_declarations main'''
     pass
@@ -108,11 +115,16 @@ def p_struct_more_members(p):
     pass
 
 def p_interface(p):
-    '''interface : INTERFACE ID NEW_LINE INDENT interface_function DEDENT'''
+    '''interface : INTERFACE ID NEW_LINE INDENT interface_function more_interface_functions DEDENT'''
     pass
 
 def p_interface_function(p):
-    '''interface_function : FN ID OPEN_PAREN optional_params CLOSE_PAREN'''
+    '''interface_function : FN ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE'''
+    pass
+
+def p_more_interface_functions(p):
+    '''more_interface_functions : more_interface_functions interface_function
+                                | empty'''
     pass
 
 def p_basic_type(p):
@@ -161,17 +173,17 @@ def p_block_line(p):
     pass
 
 def p_statement(p):
-    '''statement : statement_body NEW_LINE'''
+    '''statement : statement_body'''
     pass
 
 def p_statement_body(p):
-    '''statement_body : assignment
+    '''statement_body : assignment NEW_LINE
+                      | print NEW_LINE
+                      | scan NEW_LINE
+                      | RETURN expression NEW_LINE
+                      | fn_call NEW_LINE
                       | condition
-                      | print
-                      | scan
-                      | cycle
-                      | RETURN expression
-                      | fn_call'''
+                      | cycle'''
     pass
 
 def p_assignment(p):
@@ -183,7 +195,7 @@ def p_condition(p):
     pass
 
 def p_optional_else(p):
-    '''optional_else : ELSE NEW_LINE block
+    '''optional_else : ELSE COLON NEW_LINE block
                      | empty'''
     pass
 
@@ -230,7 +242,7 @@ def p_rel_expr(p):
 
 def p_optional_comparison(p):
   '''optional_comparison : comparison_operator rel_expr
-                          | empty'''
+                         | empty'''
   pass
 
 def p_comparison_operator(p):
@@ -266,7 +278,7 @@ def p_factor(p):
     pass
 
 def p_optional_sign(p):
-    '''optional_sign : MINUS
+    '''optional_sign : MINUS %prec UMINUS
                      | empty'''
     pass
 
@@ -274,7 +286,25 @@ def p_value(p):
     '''value : OPEN_PAREN expression CLOSE_PAREN
              | fn_call
              | const
-             | optional_pointer_op sub_struct'''
+             | sub_struct'''
+    pass
+
+def p_fn_call(p):
+    '''fn_call : sub_struct OPEN_PAREN optional_arguments CLOSE_PAREN'''
+    pass
+
+def p_optional_arguments(p):
+    '''optional_arguments : expression more_arguments
+                          | empty'''
+    pass
+
+def p_more_arguments(p):
+    '''more_arguments : more_arguments COMMA expression
+                      | empty'''
+    pass
+
+def p_sub_struct(p):
+    '''sub_struct : optional_pointer_op sub_struct_body more_sub_struct'''
     pass
 
 def p_optional_pointer_op(p):
@@ -283,40 +313,27 @@ def p_optional_pointer_op(p):
                            | empty'''
     pass
 
-def p_fn_call(p):
-    '''fn_call : sub_struct optional_fn_call ID OPEN_PAREN optional_expression CLOSE_PAREN'''
-    pass
-
-def p_optional_fn_call(p):
-    '''optional_fn_call : DOT
-                        | MINUS ARROW_HEAD'''
-    pass
-
-def p_optional_expression(p):
-    '''optional_expression : expression optional_expression_add
-                            | empty'''
-    pass
-
-def p_optional_expression_add(p):
-    '''optional_expression_add : optional_expression_add COMMA expression
-                                | empty'''
-    pass
-
-def p_sub_struct(p):
-    '''sub_struct : ID optional_sub_index more_sub_struct'''
-    pass
-
-def p_more_sub_struct(p):
-    '''more_sub_struct : more_sub_struct sub_struct optional_fn_call
-                       | empty'''
+def p_sub_struct_body(p):
+    '''sub_struct_body : ID optional_sub_index'''
     pass
 
 def p_optional_sub_index(p):
-    '''optional_sub_index : OPEN_BRACK expression optional_expression_add CLOSE_BRACK'''
+    '''optional_sub_index : OPEN_BRACK expression more_arguments CLOSE_BRACK
+                          | empty'''
+    pass
+
+def p_more_sub_struct(p):
+    '''more_sub_struct : more_sub_struct sub_struct_operator sub_struct_body
+                       | empty'''
+    pass
+
+def p_sub_struct_operator(p):
+    '''sub_struct_operator : DOT
+                           | ARROW'''
     pass
 
 def p_main(p):
-    '''main : MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
+    '''main : FN MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
     pass
 
 def p_const(p):
@@ -324,7 +341,8 @@ def p_const(p):
             | CONST_CHAR
             | CONST_STR
             | CONST_REAL
-            | CONST_BOOL'''
+            | TRUE
+            | FALSE'''
     pass
 
 def p_empty(p):
@@ -332,10 +350,13 @@ def p_empty(p):
     pass
 
 def p_error(p):
-    print("Syntax error at '%s'" % p.value)
+    if p is None:
+        print("Unexpected EOF")
+    else:
+        print("Unexpected {} at line {}".format(p.type, p.lexer.lineno))
     sys.exit()
 
-parser = yacc.yacc(debug=True)
+parser = yacc.yacc()
 
 
 data = ''
@@ -343,5 +364,5 @@ for line in sys.stdin:
     data = data + line
 
 
-yacc.parse(data)
+yacc.parse(data,lexer=scanner.lexer, debug=False)
 print('Parse success')
