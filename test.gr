@@ -23,12 +23,12 @@ fn main(): Int
 
     scan a
     scan b
-
+    
     if a eq b:
         return 0
-
+    
     var sqr: Rect
-
+    
     while a lt b:
         a = a + c
         c = c + 1
@@ -42,7 +42,7 @@ fn main(): Int
     print '\n'
     print "The perimeter is"
     print sqr.Perimeter()
-    
+
     if not a[1]->b[2]->c[3]->d[4] gt 2 and c lt b:
         print "Ded\n"
 

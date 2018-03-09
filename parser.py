@@ -1,11 +1,10 @@
 import ply.yacc as yacc
-import greaser
 import scanner
 import sys
+from greaser import Greaser
 
 tokens = scanner.tokens
-greaser = greaser.Greaser()
-
+greaser = Greaser()
 
 precedence = (
     ('left', 'PLUS', 'MINUS'),
@@ -61,6 +60,7 @@ def p_variable(p):
     '''variable : VAR ID variable_body NEW_LINE'''
     # addVariable(id, type)
     greaser.add_variable(p[2], p[3])
+    print(p[3])
 
 def p_variable_body(p):
     '''variable_body : COLON compound_type
@@ -69,7 +69,7 @@ def p_variable_body(p):
 
 def p_function(p):
     '''function : FN optional_method_declaration ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE block'''
-    print(p[3])
+    greaser.add_function(p[3], (p[2], p[5], p[7]))
 
 def p_optional_method_declaration(p):
     '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
@@ -100,8 +100,9 @@ def p_alias(p):
     pass
 
 def p_struct(p):
-    '''struct : STRUCT ID optional_struct_interfaces NEW_LINE INDENT struct_member struct_more_members DEDENT'''
-    pass
+    '''struct : STRUCT ID optional_struct_interfaces NEW_LINE INDENT struct_member more_struct_members DEDENT'''
+    #p[7].append(p[6])
+    greaser.add_struct(p[2], (p[3], p[7]))
 
 # Maybe later: Multiple interfaces per struct
 def p_optional_struct_interfaces(p):
@@ -113,10 +114,14 @@ def p_struct_member(p):
     '''struct_member : ID COLON basic_type NEW_LINE'''
     pass
 
-def p_struct_more_members(p):
-    '''struct_more_members : struct_more_members struct_member
+def p_more_struct_members(p):
+    '''more_struct_members : more_struct_members struct_member
                            | empty'''
-    pass
+    if len(p) == 3:
+        p[1].append(p[2])
+        p[0] = p[1]
+    else:
+        p[0] = []
 
 def p_interface(p):
     '''interface : INTERFACE ID NEW_LINE INDENT interface_function more_interface_functions DEDENT'''
@@ -137,28 +142,23 @@ def p_basic_type(p):
                   | CHAR
                   | BOOL
                   | pointer'''
-    pass
+    p[0] = p[1]
 
 def p_compound_type(p):
-    '''compound_type : struct_id found_struct
+    '''compound_type : struct_id
             | array
             | basic_type'''
     p[0] = p[1]
 
 def p_pointer(p):
     '''pointer : compound_type TIMES'''
-    pass
-
-def p_found_struct(p):
-    '''found_struct : '''
-    if greaser.find_struct(p[-1]) is not None:
-        p[0] = greaser.find_struct(p[-1])
-    else:
-        raise SyntaxError
+    p[0] = p[1]
+    #TODO: Signal as pointer
 
 def p_array(p):
     '''array : OPEN_BRACK basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
-    pass
+    p[0] = 2
+    #TODO: Signal as array
 
 def p_array_more_dimens(p):
     '''array_more_dimens : array_more_dimens COMMA CONST_INT
@@ -167,7 +167,12 @@ def p_array_more_dimens(p):
 
 def p_struct_id(p):
     '''struct_id : ID'''
-    pass
+    struct = greaser.find_struct(p[1])
+    if struct is not None:
+        p[0] = p[1]
+    else:
+        greaser.syntax_error('Undeclared stuct \"{}\" at line {}'.format(p[1], p.lineno(1)))
+        raise SyntaxError
 
 def p_block(p):
     '''block : INDENT open_scope block_body DEDENT close_scope'''
@@ -312,7 +317,12 @@ def p_value(p):
 
 def p_fn_call(p):
     '''fn_call : sub_struct OPEN_PAREN optional_arguments CLOSE_PAREN'''
-    pass
+    fn = greaser.find_function(p[1])
+    if fn is not None:
+        p[0] = fn
+    else:
+        greaser.syntax_error('Undeclared function \"{}\" at line {}'.format(p[1], p.lineno(1)))
+        raise SyntaxError
 
 def p_optional_arguments(p):
     '''optional_arguments : expression more_arguments
@@ -326,7 +336,8 @@ def p_more_arguments(p):
 
 def p_sub_struct(p):
     '''sub_struct : optional_pointer_op sub_struct_body more_sub_struct'''
-    pass
+    p[3].append(p[2])
+    p[0] = p[3]
 
 def p_optional_pointer_op(p):
     '''optional_pointer_op : AMP
@@ -336,7 +347,7 @@ def p_optional_pointer_op(p):
 
 def p_sub_struct_body(p):
     '''sub_struct_body : ID optional_sub_index'''
-    pass
+    p[0] = p[1]
 
 def p_optional_sub_index(p):
     '''optional_sub_index : OPEN_BRACK expression more_arguments CLOSE_BRACK
@@ -346,7 +357,11 @@ def p_optional_sub_index(p):
 def p_more_sub_struct(p):
     '''more_sub_struct : more_sub_struct sub_struct_operator sub_struct_body
                        | empty'''
-    pass
+    if len(p) == 4:
+        p[1].append(p[3])
+        p[0] = p[1]
+    else:
+        p[0] = []
 
 def p_sub_struct_operator(p):
     '''sub_struct_operator : DOT
@@ -375,7 +390,6 @@ def p_error(p):
         print("Unexpected EOF")
     else:
         print("Unexpected {} at line {}".format(p.type, p.lexer.lineno))
-    sys.exit()
 
 parser = yacc.yacc()
 
@@ -385,5 +399,4 @@ for line in sys.stdin:
     data = data + line
 
 
-yacc.parse(data,lexer=scanner.lexer, debug=False)
-print('Parse success')
+result = yacc.parse(data,lexer=scanner.lexer, debug=False, tracking=True)
