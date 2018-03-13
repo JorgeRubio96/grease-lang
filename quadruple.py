@@ -1,6 +1,19 @@
 from enum import Enum
 import sys
 
+class Operation(Enum):
+	TIMES = 1
+	DIVIDE = 2
+	PLUS = 3 
+	MINUS = 4
+	EQ = 5
+	GT = 6
+	LT = 7 
+	GE = 8
+	LE = 9 
+	NOT = 10
+	ASSIGN = 11
+
 class Quadruple(object):
 	def __init__(self):
 		self.id = -1 # auto_incremented
@@ -16,7 +29,7 @@ class Quadruple(object):
 		self.result = result
 
 	def get_list(self):
-		op = inv_op_dict[self.operator]
+		op = Operation(self.operator)
 		return [op, self.left_operand, self.right_operand, self.result]
 
 class Stack(object):
@@ -62,6 +75,12 @@ class Quadruples(object):
 		quad.id = cls.next_free_quad
 		cls.quad_list.append(quad)
 		cls.next_free_quad = len(cls.quad_list)
+		#For test only
+		x = 0
+		while x < len(cls.quad_list):
+			var =cls.quad_list[x]
+			print(var)
+			x+=1
 
 	@classmethod
 	def pop_quad(cls):
@@ -94,9 +113,12 @@ class Quadruples(object):
 		"""prints all quadruples from list """
 		count = 0
 		print("Quads ===============================")
+		#Traer lista de cuadruplos
 		l = [x.get_list() for x in cls.quad_list]
+		#mientras el elemento(cuadruplo) este en la lista
 		for e in l:
 			sys.stdout.write(str(count) + ":\t")
+			#por cada single element en el elemento (cuadruplo)
 			for se in e:
 				if not se == None:
 					sys.stdout.write(str(se))
@@ -104,19 +126,3 @@ class Quadruples(object):
 			count += 1
 			print("")
 		pass
-
-
-
-
-class Operation(Enum):
-	TIMES = 1
-	DIVIDE = 2
-	PLUS = 3 
-	MINUS = 4
-	EQ = 5
-	GT = 6
-	LT = 7 
-	GE = 8
-	LE = 9 
-	NOT = 10
-	ASSIGN = 11
