@@ -21,8 +21,12 @@ class Quadruple(object):
 class Quadruples(object):
 	# Class variables
 	quad_list = []
+	op_list = []
+	op_jump_stack = Stack()
 	jump_stack = Stack()
 	next_free_quad = 0
+	op_next_free_quad = 0
+	__shared_state_op = {}
 	__shared_state = {}
 	def __init__(self):
 		self.__dict__ = self.__shared_state
@@ -75,3 +79,17 @@ class Quadruples(object):
 			count += 1
 			print ""
 		pass
+
+
+class Operation(Enum):
+	TIMES = 1
+	DIVIDE = 2
+	PLUS = 3 
+	MINUS = 4
+	EQ = 5
+	GT = 6
+	LT = 7 
+	GE = 8
+	LE = 9 
+	NOT = 10
+	ASSIGN = 11
