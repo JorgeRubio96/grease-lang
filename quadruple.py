@@ -1,3 +1,4 @@
+from enum import Enum
 import sys
 
 class Quadruple(object):
@@ -17,6 +18,30 @@ class Quadruple(object):
 	def get_list(self):
 		op = inv_op_dict[self.operator]
 		return [op, self.left_operand, self.right_operand, self.result]
+
+class Stack(object):
+	def __init__(self):
+		self.values = []
+	def isEmpty(self):
+		return self.values == []
+	def push(self,  value):
+		self.values.append(value)
+	def pop(self):
+		if(len(self.values) > 0):
+			return self.values.pop()
+		else :
+			print("Empty Stack")
+	def peek(self):
+		if(len(self.values) == 0):
+			return None
+		else:
+			return self.values[len(self.values)-1]
+	def size(self):
+		return len(self.values)
+	def pprint(self):
+		print(self.values)
+	def inStack(self, var_name):
+		return var_name in self.values
 
 class Quadruples(object):
 	# Class variables
@@ -77,8 +102,10 @@ class Quadruples(object):
 					sys.stdout.write(str(se))
 				sys.stdout.write("\t")
 			count += 1
-			print ""
+			print("")
 		pass
+
+
 
 
 class Operation(Enum):
