@@ -2,9 +2,17 @@ import ply.yacc as yacc
 import scanner
 import sys
 from greaser import Greaser
+from variable import GreaseType, GreaseVarBuilder
+from function import GreaseFnBuilder
+from struct import GreaseStructBuilder
+from exceptions import GreaseError
 
 tokens = scanner.tokens
 greaser = Greaser()
+
+struct_builder = GreaseStructBuilder()
+var_builder = GreaseVarBuilder()
+fn_builder = GreaseFnBuilder()
 
 precedence = (
     ('left', 'PLUS', 'MINUS'),
@@ -58,9 +66,8 @@ def p_declaration(p):
 
 def p_variable(p):
     '''variable : VAR ID variable_body NEW_LINE'''
-    # addVariable(id, type)
-    greaser.add_variable(p[2], p[3])
-    print(p[3])
+    # addVariable(id, GreaseVar(type, data, address))
+    greaser.add_variable(p[2], GreaseVar(GreaseType.Struct, p[3], 0))
 
 def p_variable_body(p):
     '''variable_body : COLON compound_type
@@ -69,12 +76,19 @@ def p_variable_body(p):
 
 def p_function(p):
     '''function : FN optional_method_declaration ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE block'''
-    greaser.add_function(p[3], (p[2], p[5], p[7]))
+    fn = fn_builder.build()
+    fn_builder = GreaseFnBuilder()
+    greaser.add_function(p[3], fn, p[2])
 
 def p_optional_method_declaration(p):
     '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
                                    | empty'''
-    pass
+    if len(p) > 2:
+        p[0] = p[4]
+        var_builder.add_type(GreaseType.Struct, p[4])
+        var = var_builder.build()
+        var_builder = GreaseVarBuilder()
+        fn_builder.add_param(p[2], var)
 
 def p_optional_params(p):
     '''optional_params : param more_params
@@ -83,7 +97,7 @@ def p_optional_params(p):
 
 def p_param(p):
     '''param : ID COLON basic_type'''
-    pass
+    var_builder.add_type(p[3])
 
 def p_more_params(p):
     '''more_params : more_params COMMA param
@@ -101,25 +115,25 @@ def p_alias(p):
 
 def p_struct(p):
     '''struct : STRUCT ID optional_struct_interfaces NEW_LINE INDENT struct_member more_struct_members DEDENT'''
-    #p[7].append(p[6])
-    greaser.add_struct(p[2], (p[3], p[7]))
+    
+    builder = GreaseStructBuilder()
 
 # Maybe later: Multiple interfaces per struct
 def p_optional_struct_interfaces(p):
     '''optional_struct_interfaces : COLON ID
                                   | empty'''
-    pass
+    struct_builder.add_interface(p[2])
 
 def p_struct_member(p):
     '''struct_member : ID COLON basic_type NEW_LINE'''
-    pass
+
+    struct_builder.add_member(p[1], p[3])
 
 def p_more_struct_members(p):
     '''more_struct_members : more_struct_members struct_member
                            | empty'''
-    if len(p) == 3:
-        p[1].append(p[2])
-        p[0] = p[1]
+    if len(p) > 2:
+        p[0] = p[1] + [p[2]]
     else:
         p[0] = []
 
@@ -142,7 +156,7 @@ def p_basic_type(p):
                   | CHAR
                   | BOOL
                   | pointer'''
-    p[0] = p[1]
+    p[0] = GreaseType.from_text(p[1])
 
 def p_compound_type(p):
     '''compound_type : struct_id
@@ -168,25 +182,26 @@ def p_array_more_dimens(p):
 def p_struct_id(p):
     '''struct_id : ID'''
     struct = greaser.find_struct(p[1])
-    if struct is not None:
-        p[0] = p[1]
-    else:
-        greaser.syntax_error('Undeclared stuct \"{}\" at line {}'.format(p[1], p.lineno(1)))
-        raise SyntaxError
+    if struct is None:
+        #greaser.syntax_error('Undeclared stuct \"{}\" at line {}'.format(p[1], p.lineno(1)))
+        pass
+    
+    p[0] = p[1]
 
 def p_block(p):
-    '''block : INDENT open_scope block_body DEDENT close_scope'''
+    '''block : INDENT block_body DEDENT'''
+    #'''block : INDENT open_scope block_body DEDENT close_scope'''
     pass
 
-def p_open_scope(p):
-    '''open_scope : '''
-    global greaser
-    greaser = greaser.open_scope()
+#def p_open_scope(p):
+#    '''open_scope : '''
+#    global greaser
+#    greaser = greaser.open_scope()
 
-def p_close_scope(p):
-    '''close_scope : '''
-    global greaser
-    greaser = greaser.close_scope()
+#def p_close_scope(p):
+#    '''close_scope : '''
+#    global greaser
+#    greaser = greaser.close_scope()
 
 def p_block_body(p):
     '''block_body : block_body block_line
@@ -238,20 +253,29 @@ def p_scan(p):
 
 def p_expression(p):
     '''expression : logic_expr optional_or'''
-    pass
+    if p[2] is None:
+        p[0] = p[1]
+    else:
+        p[0] = p[2]
 
 def p_optional_or(p):
     '''optional_or : OR expression
                    | empty'''
-    pass
+    if len(p) > 2:
+        p[0] = greaser.eval(p[1], p[-1], p[2])
 
 def p_logic_expr(p):
     '''logic_expr : negation optional_and'''
-    pass
+    if p[2] is None:
+        p[0] = p[1]
+    else:
+        p[0] = p[2]
 
 def p_optional_and(p):
     '''optional_and : AND logic_expr
                     | empty'''
+    if len(p) > 2:
+        p[0] = greaser.eval(p[1], p[-1], p[2])
 
 def p_negation(p):
   '''negation : optional_not rel_expr'''
@@ -313,16 +337,25 @@ def p_value(p):
              | fn_call
              | const
              | sub_struct'''
+    #'''value : OPEN_PAREN expression CLOSE_PAREN
+    #         | fn_call
+    #         | const
+    #         | sub_struct found_sub_struct'''
     pass
+
+#def p_found_sub_struct(p):
+#    '''found_sub_struct : '''
+#    var = greaser.find_variables(p[-1])
+#    if var is None:
+#        greaser.syntax_error('Undefined variable {} at line {}'.format(p[-1], p.lineno(-1)))
 
 def p_fn_call(p):
     '''fn_call : sub_struct OPEN_PAREN optional_arguments CLOSE_PAREN'''
-    fn = greaser.find_function(p[1])
-    if fn is not None:
-        p[0] = fn
-    else:
-        greaser.syntax_error('Undeclared function \"{}\" at line {}'.format(p[1], p.lineno(1)))
-        raise SyntaxError
+    try:
+        greaser.find_function(p[1])
+    except GreaseError as e:
+        e.print(p.lineno(1))
+        raise
 
 def p_optional_arguments(p):
     '''optional_arguments : expression more_arguments
@@ -336,8 +369,7 @@ def p_more_arguments(p):
 
 def p_sub_struct(p):
     '''sub_struct : optional_pointer_op sub_struct_body more_sub_struct'''
-    p[3].append(p[2])
-    p[0] = p[3]
+    p[0] = [p[2]] + p[3]
 
 def p_optional_pointer_op(p):
     '''optional_pointer_op : AMP
@@ -358,8 +390,7 @@ def p_more_sub_struct(p):
     '''more_sub_struct : more_sub_struct sub_struct_operator sub_struct_body
                        | empty'''
     if len(p) == 4:
-        p[1].append(p[3])
-        p[0] = p[1]
+        p[0] = p[1] + [p[3]]
     else:
         p[0] = []
 
@@ -397,6 +428,5 @@ parser = yacc.yacc()
 data = ''
 for line in sys.stdin:
     data = data + line
-
 
 result = yacc.parse(data,lexer=scanner.lexer, debug=False, tracking=True)

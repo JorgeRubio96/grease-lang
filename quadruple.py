@@ -48,7 +48,7 @@ class Stack(object):
 		if(len(self.values) == 0):
 			return None
 		else:
-			return self.values[len(self.values)-1]
+			return self.values[-1]
 	def size(self):
 		return len(self.values)
 	def pprint(self):
