@@ -13,6 +13,10 @@ class Operation(Enum):
 	LE = 9 
 	NOT = 10
 	ASSIGN = 11
+	U_MINUS = 12
+	JMP_F = 13
+	JMP = 14
+
 
 class Quadruple(object):
 	def __init__(self):

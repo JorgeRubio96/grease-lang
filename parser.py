@@ -2,13 +2,20 @@ import ply.yacc as yacc
 import scanner
 import sys
 from greaser import Greaser
-from variable import GreaseType, GreaseVarBuilder
+from variable import GreaseType, GreaseVarBuilder, GreaserVar
 from function import GreaseFnBuilder
 from struct import GreaseStructBuilder
-from exceptions import GreaseError
+from exceptions import GreaseError, TypeMismatch
+from quadruple import *
 
 tokens = scanner.tokens
 greaser = Greaser()
+
+#Quadruples
+operand_stack = Stack()
+operator_stack = Stack()
+type_stack = Stack()
+tmp_quad_stack = Stack()
 
 struct_builder = GreaseStructBuilder()
 var_builder = GreaseVarBuilder()
@@ -20,7 +27,106 @@ precedence = (
     ('right', 'UMINUS'),
     ('left', 'DOT', 'ARROW')
 )
+########################################################
+# Helper Functions
+#Create quad
+def build_and_push_quad(op, l_op, r_op, res):
+  tmp_quad = Quadruple()
+  tmp_quad.build(op, l_op, r_op, res)
+  Quadruples.push_quad(tmp_quad)
 
+#Exp quad helper
+def exp_quad_helper(p, op_list):
+  """Exp quad helper:
+  Pops 2 operands from typestack and operand stack, checks type and calls build_and_push_quad"""
+  if operator_stack.isEmpty():
+    return
+  op = operator_stack.peek()
+  str_op = Operation.
+  if str_op in op_list:
+    t1 = type_stack.pop()
+    t2 = type_stack.pop()
+    return_type = SemanticCube.cube[op][t1][t2]
+    if return_type == -1:
+      raise TypeMismatch()
+    o1 = operand_stack.pop()
+    o2 = operand_stack.pop()
+    tmp_var_id = SemanticInfo.get_next_var_id(return_type)
+
+    # Generate Quadruple and push it to the list
+    build_and_push_quad(op, o2, o1, tmp_var_id)
+    operator_stack.pop()
+
+    # push the tmp_var_id and the return type to stack
+    operand_stack.push(tmp_var_id)
+    type_stack.push(return_type)
+
+    print "\n> PUSHING OPERATOR '{}' -> op2 = {}, op1 = {}, res = {}".format(str_op, o2, o1, tmp_var_id)
+    print_stacks()
+
+def assign_quad_helper(p):
+  """Assign quadruple helper
+  
+  Helper to build the assign quadruple, pops 2 operands fromthe operand_stack and checks type
+  
+  Arguments:
+    p {p} -- p
+  """
+  t1 = type_stack.pop()
+  t2 = type_stack.pop()
+  if t1 != t2:
+    raise TypeMismatch()
+  op = operator_stack.pop()
+  o1 = operand_stack.pop()
+  o2 = operand_stack.pop()
+  print ">Second Opperand {}".format(o2)
+
+  # Generate Quadruple and push it to the list
+
+  if not tmp_array_index.isEmpty():
+    print(">Temp array index {}".format(tmp_array_index.peek()))
+    build_and_push_quad(op, o1, tmp_array_index.pop(), o2)
+  else:
+    build_and_push_quad(op, o1, None, o2)
+
+def print_quad_helper():
+  operand = operand_stack.pop()
+  op = operator_stack.pop()
+  build_and_push_quad(op, None, None, operand)
+  type_stack.pop()
+
+def push_const_operand_and_type(operand, type):
+  """Push constant operand and type
+  
+  Builds the constant quadruple for operands and type
+  
+  Arguments:
+    operand {operand} -- Operand
+    type {int} -- Type
+  """
+  type_stack.push(type_dict[type])
+  if operand in FunctionTable.constant_dict.keys():
+    operand_stack.push(FunctionTable.constant_dict[operand])
+    return
+  addr = SemanticInfo.get_next_const_id()
+  operand_stack.push(addr)
+  FunctionTable.constant_dict[operand] = addr
+
+def print_stacks():
+  """Print Stacks
+  
+  Prints the operand, operator and type stack
+  """
+  sys.stdout.write("> Operand Stack = ")
+  operand_stack.pprint()
+
+  sys.stdout.write("> Operator Stack = ")
+  operator_stack.pprint()
+
+  sys.stdout.write("> Type Stack = ")
+  type_stack.pprint()
+
+########################################################
 def p_program(p):
     '''program : optional_imports optional_declarations main'''
     pass

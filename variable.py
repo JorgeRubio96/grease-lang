@@ -7,6 +7,7 @@ class GreaseType(Enum):
     Array = 4
     Struct = 5
     Pointer = 6
+    Bool = 7
 
 class GreaseVar:
     def __init__(self, grease_type, address, type_data=None):
