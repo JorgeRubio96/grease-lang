@@ -38,7 +38,7 @@ fn main(): Int
     scan sqr.w
     scan sqr.h
     print "The area is"
-    print sqr.Area()
+    print sqr.b.c.Area()
     print '\n'
     print "The perimeter is"
     print sqr.Perimeter()

@@ -1,87 +1,61 @@
 from struct import GreaseStruct
 from variable import GreaseVar
+from variable import GreaseType
+from function import GreaseFn
+from variable_table import VariableTable
+from struct_table import StructTable
+from function_directory import FunctionDirectory
+from exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, UndefinedMember
 
 class Greaser:
-    def __init__(self, parent=None):
-        self._parent = parent
-        self._variables = {}
-        
-        if parent is None:
-            self._functions = {}
-            self._structs = {}
+    def __init__(self):
+        self._global_vars = VariableTable()
+        self._global_fns = FunctionDirectory()
+        self._structs = StructTable()
+        self._scope = self._global_vars
+        self._current_fn = None
 
     def find_function(self, id):
-        fn = id[0]
-        var_name = id[1:]
-        if self._parent is None:
-            if len(var_name) > 0: # Struct fn
-                var = self.find_variables(var_name)
-                
-                if var is None:
-                    return None
-                
-                return self.find_struct(var.type).functions.get(fn, None)
-            else: # Global fn
-                return self._functions.get(id[0], None)
-        return self._parent.find_function(id)
+        print(id)
+        fn_name = id[-1]
+        var = self.find_variable(id[0:-1])
     
-    def find_variables(self, id):
-        base = id[-1]
-        tail = id[0:-1]
+    def find_variable(self, name):
+        var_name = name[0]
+        var = self._scope.find_variable(var_name)
 
-        if self._parent is None:
-            var = self._variables.get(base, None)
-        else:
-            var = self._variables.get(base, self._parent.find_variables(id))
+        if var is None:
+            raise UndefinedVariable(var_name)
 
-        while len(tail) > 0:
-            var = self.find_struct(var.type).variables.get(tail[-1], None)
-            
-            if var is None:
-                break
-            
-            tail = tail[0:-1]
+        for var_name in name[1:]:
+            if var.type is GreaseType.Struct or var.type is GreaseType.Pointer:
+                struct = self.find_struct(var.data)
+                var = struct.variables.find_variable(var_name)
 
+                if var is None:
+                    raise UndefinedMember('{} in type {}'.format(var_name, var.data))
+            else:
+                raise TypeMismatch('Expected {} but found {}'.format(GreaseType.Struct, var.type))
+        
         return var
 
     def find_struct(self, id):
-        if self._parent is None:
-            return self._structs.get(id, None)
-        return self._parent.find_struct(id)
+        return self._structs.find_struct(id)
 
-    def add_variable(self, id, t):
-        if id in self._variables:
-            return False
-        self._variables[id] = GreaseVar(t)
-        return True
+    def add_variable(self, name, var):
+        self._scope.add_variable(name,var)
 
-    def add_function(self, id, fn):
-        if self._parent is None:
-            if id in self._functions:
-                return False
-            self._functions[id] = fn
-            return True
-        return self._parent.add_function(id, fn)
+    def add_function(self, id, fn, member=None):
+        pass
 
-    def add_struct(self, id, fn):
-        if self._parent is None:
-            if id in self._structs:
-                return False
-            self._structs[id] = fn
-            return True
-        return self._parent.add_struct(id, fn)
+    def add_struct(self, id, struct):
+        pass
 
     def open_scope(self):
-        return Greaser(self)
+        self._scope = VariableTable(self._scope)
 
     def close_scope(self):
-        return self._parent
+        self._scope = self._current_fn.close_scope()
 
-    def _set_error(self, val):
-        self.error = True
-        if self._parent is not None:
-            self._parent._set_error(val)
-
-    def syntax_error(self, msg):
-        self._set_error(True)        
-        print(msg)
+    def eval(self, ap, left, right):
+        pass
