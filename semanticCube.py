@@ -1,3 +1,4 @@
+import pprint 
 class SemanticCube(object):
 	"""docstring for SemanticCube"""
 	n = len(type_dict)
@@ -20,3 +21,16 @@ class SemanticCube(object):
 			cls.cube[op][t1][t2] = v
 			cls.cube[op][t2][t1] = v
 
+	def print_cube(cls):
+		pp.print(cls);
+obj = SemanticCube()
+obj.set_return_value_for('int', '+', 'int', 'int')
+obj.set_return_value_for('int', '+', 'float', 'float')
+obj.set_return_value_for('float', '+', 'float', 'float')
+obj.set_return_value_for('float', '+', 'int', 'float')
+obj.set_return_value_for('string','+','string','string')
+obj.set_return_value_for('int','-','int','int')
+obj.set_return_value_for('int','-','float','float')
+obj.set_return_value_for('float','-','int','float')
+obj.set_return_value_for('float','-','float','float')
+obj.set_return_value_for('int','*','int','')
