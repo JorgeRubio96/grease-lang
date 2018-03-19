@@ -1,11 +1,48 @@
 from struct import GreaseStruct
 from variable import GreaseVar
-from variable import GreaseType
+from type import GreaseTypeClass
 from function import GreaseFn
+from quadruple import *
+from SemanticCube import * 
 from variable_table import VariableTable
 from struct_table import StructTable
 from function_directory import FunctionDirectory
 from exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, UndefinedMember
+
+type_class_dict = {
+    'Int': GreaseTypeClass.Int,
+    'Float': GreaseTypeClass.Float,
+    'Char': GreaseTypeClass.Char
+}
+
+operators_dict = {
+    'TIMES' : Operation.TIMES
+    'DIVIDE' : Operation.DIVIDE
+    'PLUS' : Operation.PLUS
+    'MINUS' : Operation.MINUS
+    'EQ' : Operation.EQ
+    'GT' : Operation.GT
+    'LT' : Operation.LT 
+    'GE' : Operation.GE
+    'LE' : Operation.LE
+    'NOT' : Operation.NOT
+    'ASSIGN' : Operation.ASSIGN
+    'U_MINUS' : Operation.U_MINUS
+    'JMP_F' : Operation.JMP_F
+    'JMP' : Operation.JMP
+    'AND' : Operation.AND
+    'OR' : Operation.OR
+    'CONST' : Operation.CONST
+    'WHILE' : Operation.WHILE
+    'PRINT' : Operation.PRINT
+    'SCAN' : Operation.SCAN
+    'EQUALS' : Operation.EQUALS
+    'IF' : Operation.IF
+    'ELSE' : Operation.ELSE
+}
+
+#Quadruples
+tmp_quad_stack = Stack()
 
 class Greaser:
     def __init__(self):
@@ -17,8 +54,8 @@ class Greaser:
 
     def find_function(self, id):
         print(id)
-        fn_name = id[-1]
-        var = self.find_variable(id[0:-1])
+        fn_name = id.pop()
+        var = self.find_variable(id)
     
     def find_variable(self, name):
         var_name = name[0]
@@ -28,14 +65,14 @@ class Greaser:
             raise UndefinedVariable(var_name)
 
         for var_name in name[1:]:
-            if var.type is GreaseType.Struct or var.type is GreaseType.Pointer:
+            if var.is_class(GreaseTypeClass.Struct) or var.is_class(GreaseTypeClass.Pointer):
                 struct = self.find_struct(var.data)
                 var = struct.variables.find_variable(var_name)
 
                 if var is None:
                     raise UndefinedMember('{} in type {}'.format(var_name, var.data))
             else:
-                raise TypeMismatch('Expected {} but found {}'.format(GreaseType.Struct, var.type))
+                raise TypeMismatch('Expected {} but found {}'.format(GreaseTypeClass.Struct, var.type))
         
         return var
 
@@ -59,3 +96,67 @@ class Greaser:
 
     def eval(self, ap, left, right):
         pass
+
+    @staticmethod
+    def basic_type_from_text(name):
+        return 
+
+
+########################################################
+    # Helper Functions for quadruples
+    #Create quad
+    def build_and_push_quad(op, l_op, r_op, res):
+      tmp_quad = Quadruple()
+      tmp_quad.build(op, l_op, r_op, res)
+      Quadruples.push_quad(tmp_quad)
+
+    #Exp quad helper
+    def exp_quad_helper(p, op_list, operator_stack, type_stack, operand_stack):
+      """Exp quad helper:
+      Pops 2 operands from typestack and operand stack, checks type and calls build_and_push_quad"""
+      if operator_stack.isEmpty():
+        return
+      op = operator_stack.peek()
+      id_op = p.Operation(op).value
+      if id_op in op_list:
+        t1 = type_stack.pop()
+        t2 = type_stack.pop()
+        return_type = SemanticCube.cube[op][t1][t2]
+        if return_type == -1:
+          raise TypeMismatch()
+        o1 = operand_stack.pop()
+        o2 = operand_stack.pop()
+        tmp_var_id = SemanticInfo.get_next_var_id(return_type)
+
+        # Generate Quadruple and push it to the list
+        build_and_push_quad(op, o2, o1, tmp_var_id)
+        operator_stack.pop()
+
+        # push the tmp_var_id and the return type to stack
+        operand_stack.push(tmp_var_id)
+        type_stack.push(return_type)
+
+        print "\n> PUSHING OPERATOR '{}' -> op2 = {}, op1 = {}, res = {}".format(str_op, o2, o1, tmp_var_id)
+        print_stacks()
+
+    def print_quad_helper():
+      operand = operand_stack.pop()
+      op = operator_stack.pop()
+      build_and_push_quad(op, None, None, operand)
+      type_stack.pop()
+
+    def print_stacks(operand_stack, operator_stack, type_stack):
+      """Print Stacks
+      
+      Prints the operand, operator and type stack
+      """
+      sys.stdout.write("> Operand Stack = ")
+      operand_stack.pprint()
+
+      sys.stdout.write("> Operator Stack = ")
+      operator_stack.pprint()
+
+      sys.stdout.write("> Type Stack = ")
+      type_stack.pprint()
+
+########################################################

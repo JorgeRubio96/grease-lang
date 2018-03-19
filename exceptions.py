@@ -12,24 +12,41 @@ class UndefinedVariable(GreaseError):
         self.err_name = 'Undefined variable'
 
 class UndefinedFunction(GreaseError):
-    pass
+    def __init__(self, msg):
+        self.msg = msg
+        self.err_name = 'Undefined function'
 
 class UndefinedType(GreaseError):
-    pass
+    def __init__(self, msg):
+        self.msg = msg
+        self.err_name = 'Undefined type'
 
 class UndefinedMember(GreaseError):
-    pass
+    def __init__(self, msg):
+        self.msg = msg
+        self.err_name = 'Undefined member'
+
+class UndefinedInterface(GreaseError):
+    def __init__(self, msg):
+        self.msg = msg
+        self.err_name = 'Undefined interface'
 
 class TypeMismatch(GreaseError):
     def __init__(self, msg):
         self.msg = msg
         self.err_name = 'Type mismatch'
 
-class VariableRedefiniton(GreaseError):
-    pass
+class VariableRedefinition(GreaseError):
+    def __init__(self, msg):
+        self.msg = msg
+        self.err_name = 'Variable redefinition'
 
-class StructRedfinition(GreaseError):
-    pass
+class StructRedefinition(GreaseError):
+    def __init__(self, msg):
+        self.msg = msg
+        self.err_name = 'Struct redefinition'
 
 class MethodRedefinition(GreaseError):
-    pass
+    def __init__(self, msg):
+        self.msg = msg
+        self.err_name = 'Method redefinition'

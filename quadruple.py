@@ -1,6 +1,8 @@
 from enum import Enum
 import sys
+from type import GreaseTypeClass
 
+@unique 
 class Operation(Enum):
 	TIMES = 1
 	DIVIDE = 2
@@ -16,6 +18,15 @@ class Operation(Enum):
 	U_MINUS = 12
 	JMP_F = 13
 	JMP = 14
+	AND = 15
+	OR = 16
+	CONST = 17
+	WHILE = 18
+	PRINT = 19
+	SCAN = 20
+	EQUALS = 21
+	IF = 22
+	ELSE = 23
 
 
 class Quadruple(object):
@@ -32,8 +43,11 @@ class Quadruple(object):
 		self.right_operand = right_operand
 		self.result = result
 
+	def get_op_Stack():
+		return op_Stack
+
 	def get_list(self):
-		op = Operation(self.operator)
+		op = Operation(self.operator).value
 		return [op, self.left_operand, self.right_operand, self.result]
 
 class Stack(object):
@@ -63,15 +77,26 @@ class Stack(object):
 class Quadruples(object):
 	# Class variables
 	quad_list = []
-	op_list = []
-	op_jump_stack = Stack()
 	jump_stack = Stack()
+	op_Stack = Stack()
 	next_free_quad = 0
 	op_next_free_quad = 0
 	__shared_state_op = {}
 	__shared_state = {}
 	def __init__(self):
 		self.__dict__ = self.__shared_state
+
+	#Op Methods
+	@classmethod
+	def push_op(self, op):
+		op.id = self.next_free_quad
+		self.op_Stack.push(op)
+		self.next_free_quad = len(self, op_Stack)
+
+	@classmethod
+	def pop_op(self):
+		self.next_free_quad = len(self.op_Stack) - 1
+		return self.op_Stack.pop()
 
 	# Quad Methods
 	@classmethod
@@ -82,7 +107,7 @@ class Quadruples(object):
 		#For test only
 		x = 0
 		while x < len(cls.quad_list):
-			var =cls.quad_list[x]
+			var = cls.quad_list[x]
 			print(var)
 			x+=1
 
