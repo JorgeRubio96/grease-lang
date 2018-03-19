@@ -1,11 +1,17 @@
 from struct import GreaseStruct
 from variable import GreaseVar
-from variable import GreaseType
+from type import GreaseTypeClass
 from function import GreaseFn
 from variable_table import VariableTable
 from struct_table import StructTable
 from function_directory import FunctionDirectory
 from exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, UndefinedMember
+
+type_class_dict = {
+    'Int': GreaseTypeClass.Int,
+    'Float': GreaseTypeClass.Float,
+    'Char': GreaseTypeClass.Char
+}
 
 class Greaser:
     def __init__(self):
@@ -17,8 +23,8 @@ class Greaser:
 
     def find_function(self, id):
         print(id)
-        fn_name = id[-1]
-        var = self.find_variable(id[0:-1])
+        fn_name = id.pop()
+        var = self.find_variable(id)
     
     def find_variable(self, name):
         var_name = name[0]
@@ -28,14 +34,14 @@ class Greaser:
             raise UndefinedVariable(var_name)
 
         for var_name in name[1:]:
-            if var.type is GreaseType.Struct or var.type is GreaseType.Pointer:
+            if var.is_class(GreaseTypeClass.Struct) or var.is_class(GreaseTypeClass.Pointer):
                 struct = self.find_struct(var.data)
                 var = struct.variables.find_variable(var_name)
 
                 if var is None:
                     raise UndefinedMember('{} in type {}'.format(var_name, var.data))
             else:
-                raise TypeMismatch('Expected {} but found {}'.format(GreaseType.Struct, var.type))
+                raise TypeMismatch('Expected {} but found {}'.format(GreaseTypeClass.Struct, var.type))
         
         return var
 
@@ -59,3 +65,7 @@ class Greaser:
 
     def eval(self, ap, left, right):
         pass
+
+    @staticmethod
+    def basic_type_from_text(name):
+        return 

@@ -78,7 +78,7 @@ class Quadruples(object):
 		#For test only
 		x = 0
 		while x < len(cls.quad_list):
-			var =cls.quad_list[x]
+			var = cls.quad_list[x]
 			print(var)
 			x+=1
 

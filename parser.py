@@ -2,10 +2,12 @@ import ply.yacc as yacc
 import scanner
 import sys
 from greaser import Greaser
-from variable import GreaseType, GreaseVarBuilder
+from variable import GreaseVarBuilder
 from function import GreaseFnBuilder
 from struct import GreaseStructBuilder
 from exceptions import GreaseError
+from type import GreaseType, GreaseTypeClass
+from quadruple import Quadruples
 
 tokens = scanner.tokens
 greaser = Greaser()
@@ -66,28 +68,43 @@ def p_declaration(p):
 
 def p_variable(p):
     '''variable : VAR ID variable_body NEW_LINE'''
-    # addVariable(id, GreaseVar(type, data, address))
-    greaser.add_variable(p[2], GreaseVar(GreaseType.Struct, p[3], 0))
+    global var_builder
+    v = var_builder.build()
+    greaser.add_variable(p[2], v)
+    var_builder.reset()
+    
 
 def p_variable_body(p):
     '''variable_body : COLON compound_type
                      | EQUALS expression'''
-    p[0] = p[2]
+    global var_builder
+    if p[1] is ':':
+        # Type assignment
+        t = p[2]
+    else:
+        # Expession assignment
+        last_quad = Quadruples.quad_list[-1]
+        t = last_quad.result.type
+
+    var_builder.add_type(t)
+
 
 def p_function(p):
     '''function : FN optional_method_declaration ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE block'''
+    global fn_builder
     fn = fn_builder.build()
-    fn_builder = GreaseFnBuilder()
+    fn_builder.reset()
     greaser.add_function(p[3], fn, p[2])
 
 def p_optional_method_declaration(p):
     '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
                                    | empty'''
+    global var_builder, fn_builder
     if len(p) > 2:
-        p[0] = p[4]
-        var_builder.add_type(GreaseType.Struct, p[4])
+        var_builder.add_type(p[4])
         var = var_builder.build()
-        var_builder = GreaseVarBuilder()
+        var_builder.reset()
+        
         fn_builder.add_param(p[2], var)
 
 def p_optional_params(p):
@@ -97,6 +114,7 @@ def p_optional_params(p):
 
 def p_param(p):
     '''param : ID COLON basic_type'''
+    global var_builder
     var_builder.add_type(p[3])
 
 def p_more_params(p):
@@ -115,27 +133,31 @@ def p_alias(p):
 
 def p_struct(p):
     '''struct : STRUCT ID optional_struct_interfaces NEW_LINE INDENT struct_member more_struct_members DEDENT'''
-    
-    builder = GreaseStructBuilder()
+    global struct_builder
+    s = struct_builder.build()
+    greaser.add_struct(p[2], s)
+    struct_builder.reset()
 
 # Maybe later: Multiple interfaces per struct
 def p_optional_struct_interfaces(p):
     '''optional_struct_interfaces : COLON ID
                                   | empty'''
+    global struct_builder
     struct_builder.add_interface(p[2])
 
 def p_struct_member(p):
     '''struct_member : ID COLON basic_type NEW_LINE'''
-
-    struct_builder.add_member(p[1], p[3])
+    global struct_builder
+    try:
+        struct_builder.add_member(p[1], p[3])
+    except GreaseError as e:
+        e.print(p.lineno(1))
+        raise
 
 def p_more_struct_members(p):
     '''more_struct_members : more_struct_members struct_member
                            | empty'''
-    if len(p) > 2:
-        p[0] = p[1] + [p[2]]
-    else:
-        p[0] = []
+    pass
 
 def p_interface(p):
     '''interface : INTERFACE ID NEW_LINE INDENT interface_function more_interface_functions DEDENT'''
@@ -156,13 +178,20 @@ def p_basic_type(p):
                   | CHAR
                   | BOOL
                   | pointer'''
-    p[0] = GreaseType.from_text(p[1])
+    if isinstance(p[1], str):
+        # p[1] is not a pointer
+        t = Greaser.basic_type_from_text(p[1])
+        p[0] = GreaseType(t)
+    else:
+        p[0] = p[1]
 
 def p_compound_type(p):
     '''compound_type : struct_id
             | array
             | basic_type'''
-    p[0] = p[1]
+    if isinstance(p[1], str):
+
+        p[0] = p[1]
 
 def p_pointer(p):
     '''pointer : compound_type TIMES'''
@@ -181,12 +210,7 @@ def p_array_more_dimens(p):
 
 def p_struct_id(p):
     '''struct_id : ID'''
-    struct = greaser.find_struct(p[1])
-    if struct is None:
-        #greaser.syntax_error('Undeclared stuct \"{}\" at line {}'.format(p[1], p.lineno(1)))
-        pass
-    
-    p[0] = p[1]
+    p[0] = greaser.find_struct(p[1])
 
 def p_block(p):
     '''block : INDENT block_body DEDENT'''

@@ -1,5 +1,5 @@
 from variable_table import VariableTable
-from exceptions import VariableRedefiniton
+from exceptions import VariableRedefinition
 
 class GreaseFn:
     def __init__(self, params, return_type, return_data=None):
@@ -38,3 +38,8 @@ class GreaseFnBuilder:
 
     def build(self):
         return GreaseFn(self._params, self._return_type, self._return_data)
+
+    def reset(self):
+        self._params = {}
+        self._return_type = None
+        self._return_data = None
