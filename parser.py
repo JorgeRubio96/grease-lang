@@ -79,10 +79,6 @@ def p_variable(p):
     global var_builder
     v = var_builder.build()
     greaser.add_variable(p[2], v)
-    ########################################
-    #operand_Stack.push(v.id)
-    ########################################
-    type_Stack.push(v.type)
     var_builder.reset()
 
     
@@ -108,10 +104,6 @@ def p_function(p):
     fn = fn_builder.build()
     fn_builder.reset()
     greaser.add_function(p[3], fn, p[2])
-    global_addr = operand_Stack.pop(); type_Stack.pop();
-    build_and_push_quad(operators_dict['EQ'], global_addr, None, next_id)
-    operand_Stack.push(next_id)
-    #type_Stack.push('function.type')
 
 
 
