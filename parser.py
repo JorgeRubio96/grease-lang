@@ -11,7 +11,13 @@ from type import GreaseType, GreaseTypeClass
 tokens = scanner.tokens
 greaser = Greaser()
 
-op_Stack = Quadruples()
+#Quads global structures
+op_Stack = Stack()
+operand_Stack = Stack()
+type_Stack = Stack()
+#Temp QuadQueue
+tmp_quad_stack = Stack()
+
 
 struct_builder = GreaseStructBuilder()
 var_builder = GreaseVarBuilder()
@@ -26,7 +32,7 @@ precedence = (
 
 def p_program(p):
   '''program : optional_imports optional_declarations main'''
-  pass
+  Quadruples.print_all()
 
 # Permite tener 0 o mas import statements
 # Left recursive
@@ -81,8 +87,13 @@ def p_variable(p):
     e.print(p.lineno(2))
     raise
   
+  ########################################
+  #operand_Stack.push(v.id)
+  ########################################
+  type_Stack.push(v.type)
   var_builder.reset()
-  
+
+    
 
 def p_variable_body(p):
   '''variable_body : COLON compound_type
@@ -109,7 +120,13 @@ def p_function(p):
     fn_builder.reset()
     greaser.add_function(p[3], fn, p[2])
   except GreaseError as e:
-    e.print(p.lineno(2))
+  e.print(p.lineno(2))
+  global_addr = operand_Stack.pop(); type_Stack.pop();
+  build_and_push_quad(operators_dict['EQ'], global_addr, None, next_id)
+  operand_Stack.push(next_id)
+  #type_Stack.push('function.type')
+
+
 
 def p_optional_method_declaration(p):
   '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
@@ -475,7 +492,13 @@ def p_sub_struct_operator(p):
 
 def p_main(p):
   '''main : FN MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
-  pass
+  build_and_push_quad(operators_dict['end'], None, None, None)
+
+def p_main_fill_quad(p):
+  '''main_fill_quad : '''
+  tmp_end = Quadruples.pop_jump()
+  tmp_count = Quadruples.next_free_quad
+  Quadruples.fill_missing_quad(tmp_end, tmp_count)
 
 def p_const(p):
   '''const : CONST_INT

@@ -42,7 +42,11 @@ operators_dict = {
     'ELSE' : Operation.ELSE
 }
 
-#Quadruples
+#Quads global structures
+op_Stack = Stack()
+operand_Stack = Stack()
+type_Stack = Stack()
+#Temp QuadQueue
 tmp_quad_stack = Stack()
 
 class Greaser:
@@ -141,11 +145,25 @@ class Greaser:
         print("\n> PUSHING OPERATOR '{}' -> op2 = {}, op1 = {}, res = {}".format(str_op, o2, o1, tmp_var_id))
         print_stacks()
 
-    def print_quad_helper():
-      operand = operand_stack.pop()
+    def push_const_operand_and_type(operand, type, type_stack, operand_stack):
+      '''Builds the constant quadruple for operands and type'''
+      type_stack.push(type_class_dict[type])
+      if operand in operators_dict.keys():
+        operand_stack.push(operators_dict[operand])
+        return
+
+    def assign_quad_helper(p, type_stack, operator_stack, operand_stack):
+      t1 = type_stack.pop()
+      t2 = type_stack.pop()
+      if t1 != t2:
+        raise TypeMismatch()
       op = operator_stack.pop()
-      build_and_push_quad(op, None, None, operand)
-      type_stack.pop()
+      o1 = operand_stack.pop()
+      o2 = operand_stack.pop()
+      print ">Second Operand {}".format(o2)
+
+      #generate quad and push it to the list
+      build_and_push_quad(op, o1, None, o2)
 
     def print_stacks(operand_stack, operator_stack, type_stack):
       """Print Stacks
