@@ -160,7 +160,7 @@ class Greaser:
       op = operator_stack.pop()
       o1 = operand_stack.pop()
       o2 = operand_stack.pop()
-      print ">Second Operand {}".format(o2)
+      print(">Second Operand {}".format(o2))
 
       #generate quad and push it to the list
       build_and_push_quad(op, o1, None, o2)

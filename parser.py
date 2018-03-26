@@ -12,7 +12,7 @@ tokens = scanner.tokens
 greaser = Greaser()
 
 #Quads global structures
-op_Stack = Stack()
+op_stack = Stack()
 operand_Stack = Stack()
 type_Stack = Stack()
 #Temp QuadQueue
@@ -31,8 +31,14 @@ precedence = (
 )
 
 def p_program(p):
-  '''program : optional_imports optional_declarations main'''
+  '''program : np_jump_to_main optional_imports optional_declarations main'''
   Quadruples.print_all()
+
+def p_np_jump_to_main(p):
+  '''np_jump_to_main : '''
+  # Agregar primer cuadruplo salto a main
+  Quadruples.jump_stack.push(Quadruples.next_free_quad)
+  Greaser.build_and_push_quad(Operation.JMP, None, None, None)
 
 # Permite tener 0 o mas import statements
 # Left recursive
@@ -87,10 +93,6 @@ def p_variable(p):
     e.print(p.lineno(2))
     raise
   
-  ########################################
-  #operand_Stack.push(v.id)
-  ########################################
-  type_Stack.push(v.type)
   var_builder.reset()
 
     
@@ -120,10 +122,13 @@ def p_function(p):
     fn_builder.reset()
     greaser.add_function(p[3], fn, p[2])
   except GreaseError as e:
-  e.print(p.lineno(2))
-  global_addr = operand_Stack.pop(); type_Stack.pop();
-  build_and_push_quad(operators_dict['EQ'], global_addr, None, next_id)
-  operand_Stack.push(next_id)
+    e.print(p.lineno(2))
+    raise
+
+  #global_addr = operand_Stack.pop()
+  #type_Stack.pop()
+  #greaser.build_and_push_quad(Operation.EQ, global_addr, None, next_id)
+  #operand_Stack.push(next_id)
   #type_Stack.push('function.type')
 
 
@@ -350,7 +355,7 @@ def p_optional_or(p):
   if len(p) > 2:
     quad = Quadruple()
     quad.operator = Operation.OR
-    op_Stack.push_op(quad)
+    op_stack.push(quad)
 
 def p_logic_expr(p):
   '''logic_expr : negation optional_and'''
@@ -365,20 +370,20 @@ def p_optional_and(p):
   if len(p) > 2:
     quad = Quadruple()
     quad.operator = Operation.AND
-    op_Stack.push_op(quad)
+    op_stack.push(quad)
 
 def p_negation(p):
   '''negation : optional_not rel_expr'''
   quad = Quadruple()
   quad.operator = Operation.NOT
-  op_Stack.push_op(quad)
+  op_stack.push(quad)
 
 def p_optional_not(p):
   '''optional_not : NOT
                   | empty'''
   quad = Quadruple()
   quad.operator = Operation.U_MINUS
-  op_Stack.push_op(quad)
+  op_stack.push(quad)
 
 def p_rel_expr(p):
   '''rel_expr : arith_expr optional_comparison'''
@@ -397,7 +402,7 @@ def p_comparison_operator(p):
                          | LE'''
   quad = Quadruple()
   quad.operator = Operation.GT
-  op_Stack.push_op(quad)
+  op_stack.push(quad)
 
 def p_arith_expr(p):
   '''arith_expr : term optional_arith_op'''
@@ -409,7 +414,7 @@ def p_optional_arith_op(p):
                         | empty'''
   quad = Quadruple()
   quad.operator = Operation.PLUS
-  op_Stack.push_op(quad)
+  op_stack.push(quad)
 
 def p_term(p):
   '''term : factor optional_mult_div'''
@@ -421,7 +426,7 @@ def p_optional_mult_div(p):
                         | empty'''
   quad = Quadruple()
   quad.operator = Operation.TIMES
-  op_Stack.push_op(quad)
+  op_stack.push(quad)
 
 def p_factor(p):
   '''factor : optional_sign value'''
@@ -436,9 +441,15 @@ def p_value(p):
   '''value : OPEN_PAREN expression CLOSE_PAREN
             | fn_call
             | const
-            | sub_struct'''
-  print(p[1])
+            | sub_struct np_found_variable'''
+  ########################################
+  #operand_Stack.push(v.id)
+  ########################################
+  #type_Stack.push(v.type)
 
+def p_np_found_variable(p):
+  '''np_found_variable : '''
+  print('Found variable {} in expr line {}'.format(p[-1],p.lineno(-1)))
 
 def p_fn_call(p):
   '''fn_call : sub_struct OPEN_PAREN optional_arguments CLOSE_PAREN'''
@@ -491,11 +502,11 @@ def p_sub_struct_operator(p):
   pass
 
 def p_main(p):
-  '''main : FN MAIN OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
-  build_and_push_quad(operators_dict['end'], None, None, None)
+  '''main : FN MAIN np_main_fill_quad OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
+  # greaser.build_and_push_quad(Operation.END, None, None, None)
 
-def p_main_fill_quad(p):
-  '''main_fill_quad : '''
+def p_np_main_fill_quad(p):
+  '''np_main_fill_quad : '''
   tmp_end = Quadruples.pop_jump()
   tmp_count = Quadruples.next_free_quad
   Quadruples.fill_missing_quad(tmp_end, tmp_count)
