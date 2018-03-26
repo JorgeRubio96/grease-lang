@@ -1,4 +1,7 @@
 import Math as M
+import from Math
+    Sqrt,
+    PI as pi
 
 interface Shape
     fn Area(): Float
@@ -38,7 +41,7 @@ fn main(): Int
     scan sqr.w
     scan sqr.h
     print "The area is"
-    print sqr.b.c.Area()
+    print sqr.Area()
     print '\n'
     print "The perimeter is"
     print sqr.Perimeter()

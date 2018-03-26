@@ -1,11 +1,10 @@
 import ply.yacc as yacc
 import scanner
-import sys
 from greaser import Greaser
 from variable import GreaseVarBuilder, GreaserVar
 from function import GreaseFnBuilder
 from struct import GreaseStructBuilder
-from exceptions import GreaseError, TypeMismatch
+from exceptions import GreaseError, TypeMismatch, UndefinedType, UndefinedVariable
 from quadruple import *
 from type import GreaseType, GreaseTypeClass
 
@@ -71,8 +70,13 @@ def p_declaration(p):
 def p_variable(p):
     '''variable : VAR ID variable_body NEW_LINE'''
     global var_builder
-    v = var_builder.build()
-    greaser.add_variable(p[2], v)
+    try:
+        v = var_builder.build()
+        greaser.add_variable(p[2], v)
+    except GreaseError as e:
+        e.print(p.lineno(2))
+        raise
+    
     var_builder.reset()
     
 
@@ -85,8 +89,10 @@ def p_variable_body(p):
         t = p[2]
     else:
         # Expession assignment
-        last_quad = Quadruples.quad_list[-1]
-        t = last_quad.result.type
+        # TODO: Enable when quadruples are ready
+        #last_quad = Quadruples.quad_list[-1]
+        #t = last_quad.result.type
+        t = GreaseType(GreaseTypeClass.Int)
 
     var_builder.add_type(t)
 
@@ -94,20 +100,28 @@ def p_variable_body(p):
 def p_function(p):
     '''function : FN optional_method_declaration ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE block'''
     global fn_builder
-    fn = fn_builder.build()
-    fn_builder.reset()
-    greaser.add_function(p[3], fn, p[2])
+    try:
+        fn = fn_builder.build()
+        fn_builder.reset()
+        greaser.add_function(p[3], fn, p[2])
+    except GreaseError as e:
+        e.print(p.lineno(2))
 
 def p_optional_method_declaration(p):
     '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
                                    | empty'''
     global var_builder, fn_builder
     if len(p) > 2:
-        var_builder.add_type(p[4])
-        var = var_builder.build()
-        var_builder.reset()
-        
-        fn_builder.add_param(p[2], var)
+        try:
+            t = GreaseType(GreaseTypeClass.Struct, p[4])
+            var_builder.add_type(t)
+            var = var_builder.build()
+            var_builder.reset()
+            
+            fn_builder.add_param(p[2], var)
+        except GreaseError as e:
+            e.print(p.lineno(2))
+            raise
 
 def p_optional_params(p):
     '''optional_params : param more_params
@@ -116,8 +130,11 @@ def p_optional_params(p):
 
 def p_param(p):
     '''param : ID COLON basic_type'''
-    global var_builder
-    var_builder.add_type(p[3])
+    try:
+        var_builder.add_type(p[3])
+    except GreaseError as e:
+        e.print(p.lineno(3))
+        raise
 
 def p_more_params(p):
     '''more_params : more_params COMMA param
@@ -127,7 +144,12 @@ def p_more_params(p):
 def p_optional_return_type(p):
     '''optional_return_type : COLON basic_type
                             | empty'''
-    pass
+    if len(p) > 2:
+        try:
+            fn_builder.add_return_type(p[2])
+        except GreaseError as e:
+            e.print(p.lineno(2))
+            raise
 
 def p_alias(p):
     '''alias : ALIAS compound_type AS ID NEW_LINE'''
@@ -136,22 +158,32 @@ def p_alias(p):
 def p_struct(p):
     '''struct : STRUCT ID optional_struct_interfaces NEW_LINE INDENT struct_member more_struct_members DEDENT'''
     global struct_builder
-    s = struct_builder.build()
-    greaser.add_struct(p[2], s)
-    struct_builder.reset()
+    try:
+        s = struct_builder.build()
+        greaser.add_struct(p[2], s)
+        struct_builder.reset()
+    except GreaseError as e:
+        e.print(p.lineno(2))
+        raise
 
 # Maybe later: Multiple interfaces per struct
 def p_optional_struct_interfaces(p):
     '''optional_struct_interfaces : COLON ID
                                   | empty'''
     global struct_builder
-    struct_builder.add_interface(p[2])
+    try:
+        struct_builder.add_interface(p[2])
+    except GreaseError as e:
+        e.print(p.lineno(2))
+        raise
 
 def p_struct_member(p):
     '''struct_member : ID COLON basic_type NEW_LINE'''
-    global struct_builder
+    global struct_builder, var_builder
     try:
-        struct_builder.add_member(p[1], p[3])
+        var_builder.add_type(p[3])
+        struct_builder.add_member(p[1], var_builder.build())
+        var_builder.reset()
     except GreaseError as e:
         e.print(p.lineno(1))
         raise
@@ -182,8 +214,7 @@ def p_basic_type(p):
                   | pointer'''
     if isinstance(p[1], str):
         # p[1] is not a pointer
-        t = Greaser.basic_type_from_text(p[1])
-        p[0] = GreaseType(t)
+        p[0] = Greaser.basic_type_from_text(p[1])
     else:
         p[0] = p[1]
 
@@ -192,42 +223,42 @@ def p_compound_type(p):
             | array
             | basic_type'''
     if isinstance(p[1], str):
-
+        p[0] = GreaseType(GreaseTypeClass.Struct, p[1])
+    else:
         p[0] = p[1]
 
 def p_pointer(p):
     '''pointer : compound_type TIMES'''
-    p[0] = p[1]
+    p[0] = GreaseType(GreaseTypeClass.Pointer, p[1])
     #TODO: Signal as pointer
 
 def p_array(p):
     '''array : OPEN_BRACK basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
-    p[0] = 2
+    dimens = [p[4]] + p[5]
+    p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens)
     #TODO: Signal as array
 
 def p_array_more_dimens(p):
     '''array_more_dimens : array_more_dimens COMMA CONST_INT
                          | empty'''
-    pass
+    if len(p) > 2:
+        p[0] = [p[3]] + p[1]
+    else:
+        p[0] = []
 
 def p_struct_id(p):
     '''struct_id : ID'''
-    p[0] = greaser.find_struct(p[1])
+    try:
+        greaser.find_struct(p[1])
+    except GreaseError as e:
+        e.print(p.lineno(1))
+        raise
+    
+    p[0] = p[1]
 
 def p_block(p):
     '''block : INDENT block_body DEDENT'''
-    #'''block : INDENT open_scope block_body DEDENT close_scope'''
     pass
-
-#def p_open_scope(p):
-#    '''open_scope : '''
-#    global greaser
-#    greaser = greaser.open_scope()
-
-#def p_close_scope(p):
-#    '''close_scope : '''
-#    global greaser
-#    greaser = greaser.close_scope()
 
 def p_block_body(p):
     '''block_body : block_body block_line
@@ -255,7 +286,11 @@ def p_statement_body(p):
 
 def p_assignment(p):
     '''assignment : sub_struct EQUALS expression'''
-    pass
+    try:
+        var = greaser.find_variable(p[1])
+    except GreaseError as e:
+        e.print(p.lineno(1))
+        raise
 
 def p_condition(p):
     '''condition : IF expression COLON NEW_LINE block optional_else'''
@@ -364,17 +399,8 @@ def p_value(p):
              | fn_call
              | const
              | sub_struct'''
-    #'''value : OPEN_PAREN expression CLOSE_PAREN
-    #         | fn_call
-    #         | const
-    #         | sub_struct found_sub_struct'''
-    pass
+    print(p[1])
 
-#def p_found_sub_struct(p):
-#    '''found_sub_struct : '''
-#    var = greaser.find_variables(p[-1])
-#    if var is None:
-#        greaser.syntax_error('Undefined variable {} at line {}'.format(p[-1], p.lineno(-1)))
 
 def p_fn_call(p):
     '''fn_call : sub_struct OPEN_PAREN optional_arguments CLOSE_PAREN'''
@@ -437,7 +463,7 @@ def p_const(p):
             | CONST_REAL
             | TRUE
             | FALSE'''
-    pass
+    p[0] = p[1]
 
 def p_empty(p):
     'empty :'
@@ -450,10 +476,3 @@ def p_error(p):
         print("Unexpected {} at line {}".format(p.type, p.lexer.lineno))
 
 parser = yacc.yacc()
-
-
-data = ''
-for line in sys.stdin:
-    data = data + line
-
-result = yacc.parse(data,lexer=scanner.lexer, debug=False, tracking=True)

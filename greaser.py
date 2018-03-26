@@ -1,6 +1,6 @@
 from struct import GreaseStruct
 from variable import GreaseVar
-from type import GreaseTypeClass
+from type import GreaseTypeClass, GreaseType
 from function import GreaseFn
 from quadruple import *
 from SemanticCube import * 
@@ -12,7 +12,8 @@ from exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, Undef
 type_class_dict = {
     'Int': GreaseTypeClass.Int,
     'Float': GreaseTypeClass.Float,
-    'Char': GreaseTypeClass.Char
+    'Char': GreaseTypeClass.Char,
+    'Bool': GreaseTypeClass.Bool,
 }
 
 operators_dict = {
@@ -53,7 +54,6 @@ class Greaser:
         self._current_fn = None
 
     def find_function(self, id):
-        print(id)
         fn_name = id.pop()
         var = self.find_variable(id)
     
@@ -66,13 +66,14 @@ class Greaser:
 
         for var_name in name[1:]:
             if var.is_class(GreaseTypeClass.Struct) or var.is_class(GreaseTypeClass.Pointer):
-                struct = self.find_struct(var.data)
+                type_name = var.type.type_data
+                struct = self.find_struct(type_name)
                 var = struct.variables.find_variable(var_name)
 
                 if var is None:
-                    raise UndefinedMember('{} in type {}'.format(var_name, var.data))
+                    raise UndefinedMember('{} in type {}'.format(var_name, type_name))
             else:
-                raise TypeMismatch('Expected {} but found {}'.format(GreaseTypeClass.Struct, var.type))
+                raise TypeMismatch('\"{}\" is not a struct'.format(var_name))
         
         return var
 
@@ -82,20 +83,22 @@ class Greaser:
     def add_variable(self, name, var):
         self._scope.add_variable(name,var)
 
-    def add_function(self, id, fn, member=None):
-        pass
+    def add_function(self, name, fn, struct_name=None):
+        if struct_name is not None:
+            struct = self.find_struct(struct_name)
+            struct.functions.add_function(name, fn)
+        else:
+            self._global_fns.add_function(name, fn)
+            
 
     def add_struct(self, id, struct):
-        pass
+        self._structs.add_struct(id, struct)
 
     def open_scope(self):
         self._scope = VariableTable(self._scope)
 
     def close_scope(self):
         self._scope = self._current_fn.close_scope()
-
-    def eval(self, ap, left, right):
-        pass
 
     @staticmethod
     def basic_type_from_text(name):
