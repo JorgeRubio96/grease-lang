@@ -8,6 +8,7 @@ class GreaseTypeClass(Enum):
     Struct = 5
     Pointer = 6
     Bool = 7
+    Interface = 8
 
 class GreaseType:
     def __init__(self, type_class, type_data=None, type_size=None):
