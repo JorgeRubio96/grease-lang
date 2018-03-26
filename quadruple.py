@@ -2,7 +2,6 @@ from enum import Enum
 import sys
 from type import GreaseTypeClass
 
-@unique 
 class Operation(Enum):
 	TIMES = 1
 	DIVIDE = 2
@@ -91,11 +90,11 @@ class Quadruples(object):
 	def push_op(self, op):
 		op.id = self.next_free_quad
 		self.op_Stack.push(op)
-		self.next_free_quad = len(self, op_Stack)
+		self.next_free_quad = self.op_Stack.size
 
 	@classmethod
 	def pop_op(self):
-		self.next_free_quad = len(self.op_Stack) - 1
+		self.next_free_quad = self.op_Stack.size - 1
 		return self.op_Stack.pop()
 
 	# Quad Methods

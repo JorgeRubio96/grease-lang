@@ -3,7 +3,7 @@ from variable import GreaseVar
 from type import GreaseTypeClass, GreaseType
 from function import GreaseFn
 from quadruple import *
-from SemanticCube import * 
+from semantic_cube import *
 from variable_table import VariableTable
 from struct_table import StructTable
 from function_directory import FunctionDirectory
@@ -17,28 +17,28 @@ type_class_dict = {
 }
 
 operators_dict = {
-    'TIMES' : Operation.TIMES
-    'DIVIDE' : Operation.DIVIDE
-    'PLUS' : Operation.PLUS
-    'MINUS' : Operation.MINUS
-    'EQ' : Operation.EQ
-    'GT' : Operation.GT
-    'LT' : Operation.LT 
-    'GE' : Operation.GE
-    'LE' : Operation.LE
-    'NOT' : Operation.NOT
-    'ASSIGN' : Operation.ASSIGN
-    'U_MINUS' : Operation.U_MINUS
-    'JMP_F' : Operation.JMP_F
-    'JMP' : Operation.JMP
-    'AND' : Operation.AND
-    'OR' : Operation.OR
-    'CONST' : Operation.CONST
-    'WHILE' : Operation.WHILE
-    'PRINT' : Operation.PRINT
-    'SCAN' : Operation.SCAN
-    'EQUALS' : Operation.EQUALS
-    'IF' : Operation.IF
+    'TIMES' : Operation.TIMES,
+    'DIVIDE' : Operation.DIVIDE, 
+    'PLUS' : Operation.PLUS,
+    'MINUS' : Operation.MINUS,
+    'EQ' : Operation.EQ,
+    'GT' : Operation.GT,
+    'LT' : Operation.LT,
+    'GE' : Operation.GE,
+    'LE' : Operation.LE,
+    'NOT' : Operation.NOT,
+    'ASSIGN' : Operation.ASSIGN,
+    'U_MINUS' : Operation.U_MINUS,
+    'JMP_F' : Operation.JMP_F,
+    'JMP' : Operation.JMP,
+    'AND' : Operation.AND,
+    'OR' : Operation.OR,
+    'CONST' : Operation.CONST,
+    'WHILE' : Operation.WHILE,
+    'PRINT' : Operation.PRINT,
+    'SCAN' : Operation.SCAN,
+    'EQUALS' : Operation.EQUALS,
+    'IF' : Operation.IF,
     'ELSE' : Operation.ELSE
 }
 
@@ -56,7 +56,7 @@ class Greaser:
     def find_function(self, id):
         fn_name = id.pop()
         var = self.find_variable(id)
-    
+
     def find_variable(self, name):
         var_name = name[0]
         var = self._scope.find_variable(var_name)
@@ -74,7 +74,7 @@ class Greaser:
                     raise UndefinedMember('{} in type {}'.format(var_name, type_name))
             else:
                 raise TypeMismatch('\"{}\" is not a struct'.format(var_name))
-        
+
         return var
 
     def find_struct(self, id):
@@ -89,7 +89,6 @@ class Greaser:
             struct.functions.add_function(name, fn)
         else:
             self._global_fns.add_function(name, fn)
-            
 
     def add_struct(self, id, struct):
         self._structs.add_struct(id, struct)
@@ -102,7 +101,7 @@ class Greaser:
 
     @staticmethod
     def basic_type_from_text(name):
-        return 
+        return
 
 
 ########################################################
@@ -139,7 +138,7 @@ class Greaser:
         operand_stack.push(tmp_var_id)
         type_stack.push(return_type)
 
-        print "\n> PUSHING OPERATOR '{}' -> op2 = {}, op1 = {}, res = {}".format(str_op, o2, o1, tmp_var_id)
+        print("\n> PUSHING OPERATOR '{}' -> op2 = {}, op1 = {}, res = {}".format(str_op, o2, o1, tmp_var_id))
         print_stacks()
 
     def print_quad_helper():
@@ -150,7 +149,7 @@ class Greaser:
 
     def print_stacks(operand_stack, operator_stack, type_stack):
       """Print Stacks
-      
+
       Prints the operand, operator and type stack
       """
       sys.stdout.write("> Operand Stack = ")
