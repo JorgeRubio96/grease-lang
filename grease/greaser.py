@@ -1,13 +1,14 @@
-from struct import GreaseStruct
-from variable import GreaseVar
-from type import GreaseTypeClass, GreaseType
-from function import GreaseFn
-from quadruple import *
-from semantic_cube import *
-from variable_table import VariableTable
-from struct_table import StructTable
-from function_directory import FunctionDirectory
-from exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, UndefinedMember
+from grease.core.struct import GreaseStruct
+from grease.core.variable import GreaseVar
+from grease.core.type import GreaseTypeClass, GreaseType
+from grease.core.function import GreaseFn
+from grease.core.quadruple import Quadruple, Quadruples, Operation
+from grease.semantic_cube import obj
+from grease.core.variable_table import VariableTable
+from grease.core.struct_table import StructTable
+from grease.core.function_directory import FunctionDirectory
+from grease.core.exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, UndefinedMember
+from grease.core.stack import Stack
 
 type_class_dict = {
     'Int': GreaseTypeClass.Int,

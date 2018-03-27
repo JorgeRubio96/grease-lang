@@ -1,7 +1,6 @@
 from enum import Enum
-from stack import Stack
-import sys
-from type import GreaseTypeClass
+from grease.core.stack import Stack
+from grease.core.type import GreaseTypeClass
 
 class Operation(Enum):
 	TIMES = 1
@@ -122,12 +121,12 @@ class Quadruples(object):
 		l = [x.get_list() for x in cls.quad_list]
 		#mientras el elemento(cuadruplo) este en la lista
 		for e in l:
-			sys.stdout.write(str(count) + ":\t")
+			print(str(count), end=':\t')
 			#por cada single element en el elemento (cuadruplo)
 			for se in e:
 				if not se == None:
-					sys.stdout.write(str(se))
-				sys.stdout.write("\t")
+					print(str(se), end='')
+				print(end='\t')
 			count += 1
-			print("")
+			print()
 		pass

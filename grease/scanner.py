@@ -1,5 +1,5 @@
 import ply.lex as lex
-from indents import Indents
+from grease.core.indents import Indents
 
 reserved = {
     'var': 'VAR',

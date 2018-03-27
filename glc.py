@@ -1,6 +1,6 @@
 import sys
-from scanner import grease_lexer
-from parser import grease_parser
+from grease.scanner import grease_lexer
+from grease.parser import grease_parser
 
 def _main():
     data = ''

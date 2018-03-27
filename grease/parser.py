@@ -1,13 +1,13 @@
 import ply.yacc as yacc
-from scanner import tokens
-from greaser import Greaser
-from variable import GreaseVarBuilder
-from function import GreaseFnBuilder
-from struct import GreaseStructBuilder
-from exceptions import GreaseError
-from quadruple import Quadruples, Quadruple, Operation
-from stack import Stack
-from type import GreaseType, GreaseTypeClass
+from grease.scanner import tokens
+from grease.greaser import Greaser
+from grease.core.variable import GreaseVarBuilder
+from grease.core.function import GreaseFnBuilder
+from grease.core.struct import GreaseStructBuilder
+from grease.core.exceptions import GreaseError
+from grease.core.quadruple import Quadruples, Quadruple, Operation
+from grease.core.stack import Stack
+from grease.core.type import GreaseType, GreaseTypeClass
 
 greaser = Greaser()
 

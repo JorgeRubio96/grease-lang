@@ -1,5 +1,5 @@
-from variable_table import VariableTable
-from exceptions import VariableRedefinition
+from grease.core.variable_table import VariableTable
+from grease.core.exceptions import VariableRedefinition
 
 class GreaseFn:
     def __init__(self, params, return_type, return_data=None):

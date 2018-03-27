@@ -1,6 +1,6 @@
 import pprint as pp
-from type import GreaseTypeClass
-from quadruple import Operation
+from grease.core.type import GreaseTypeClass
+from grease.core.quadruple import Operation
 
 class SemanticCube(object):
 	"""docstring for SemanticCube"""
@@ -8,25 +8,25 @@ class SemanticCube(object):
 	ops = len(Operation)
 	cube = {}
 
-	def set_return_value_for(cls, left, op, right, res):
+	def set_return_value_for(self, left, op, right, res):
 		if not isinstance(left, GreaseTypeClass) or not isinstance(right, GreaseTypeClass) \
 			or not isinstance(op, Operation) or not isinstance(res, GreaseTypeClass):
 				return False
 		
-		if op not in cls.cube:
-			cls.cube[op] = {}
+		if op not in self.cube:
+			self.cube[op] = {}
 
-		if left not in cls.cube[op]:
-			cls.cube[op][left] = {}
+		if left not in self.cube[op]:
+			self.cube[op][left] = {}
 
-		cls.cube[op][left][right] = res
+		self.cube[op][left][right] = res
 
 		return True
 
 
 
-	def print_cube(cls):
-		pp.print(cls)
+	def print_cube(self):
+		pp.print(self)
 
 obj = SemanticCube()
 obj.set_return_value_for(GreaseTypeClass.Int, Operation.PLUS, GreaseTypeClass.Int, GreaseTypeClass.Int)

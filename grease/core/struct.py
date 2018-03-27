@@ -1,6 +1,6 @@
-from variable_table import VariableTable
-from function_directory import FunctionDirectory
-from exceptions import VariableRedefinition, MethodRedefinition
+from grease.core.variable_table import VariableTable
+from grease.core.function_directory import FunctionDirectory
+from grease.core.exceptions import VariableRedefinition, MethodRedefinition
 
 class GreaseStruct:
     def __init__(self, variables={}, interface=None, functions={}):
