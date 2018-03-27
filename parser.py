@@ -1,4 +1,3 @@
-import ply.yacc as yacc
 import scanner
 from greaser import Greaser
 from variable import GreaseVarBuilder, GreaseVar
@@ -8,7 +7,6 @@ from exceptions import GreaseError, TypeMismatch, UndefinedType, UndefinedVariab
 from quadruple import *
 from type import GreaseType, GreaseTypeClass
 
-tokens = scanner.tokens
 greaser = Greaser()
 
 #Quads global structures
@@ -529,5 +527,3 @@ def p_error(p):
     print("Unexpected EOF")
   else:
     print("Unexpected {} at line {}".format(p.type, p.lexer.lineno))
-
-parser = yacc.yacc()

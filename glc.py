@@ -1,9 +1,15 @@
 import sys
-import scanner
-import parser
+import ply.lex as lex
+import ply.yacc as yacc
+from indents import Indents
+from scanner import *
+from parser import *
+
 
 
 def main():
+    lexer = Indents(lex.lex())
+    parser = yacc.yacc()
     data = ''
 
     if len(sys.argv) > 1:
@@ -13,7 +19,7 @@ def main():
         for line in sys.stdin:
             data = data + line
 
-    result = parser.parser.parse(data,lexer=scanner.lexer, debug=False, tracking=True)
+    result = parser.parse(data,lexer=lexer, debug=False, tracking=True)
 
 if __name__ == '__main__':
     main()
