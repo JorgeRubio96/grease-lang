@@ -1,10 +1,12 @@
-import scanner
+import ply.yacc as yacc
+from scanner import tokens
 from greaser import Greaser
-from variable import GreaseVarBuilder, GreaseVar
+from variable import GreaseVarBuilder
 from function import GreaseFnBuilder
 from struct import GreaseStructBuilder
-from exceptions import GreaseError, TypeMismatch, UndefinedType, UndefinedVariable
-from quadruple import *
+from exceptions import GreaseError
+from quadruple import Quadruples, Quadruple, Operation
+from stack import Stack
 from type import GreaseType, GreaseTypeClass
 
 greaser = Greaser()
@@ -527,3 +529,5 @@ def p_error(p):
     print("Unexpected EOF")
   else:
     print("Unexpected {} at line {}".format(p.type, p.lexer.lineno))
+
+grease_parser = yacc.yacc()

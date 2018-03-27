@@ -1,4 +1,4 @@
-import pprint
+import pprint as pp
 from type import GreaseTypeClass
 from quadruple import Operation
 

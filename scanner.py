@@ -1,3 +1,6 @@
+import ply.lex as lex
+from indents import Indents
+
 reserved = {
     'var': 'VAR',
     'if': 'IF',
@@ -112,3 +115,5 @@ def first_word(s):
 
 def t_error(t):
     print("Unexpected \"{}\" at line {}".format(first_word(t.value), t.lexer.lineno))
+
+grease_lexer = Indents(lex.lex())

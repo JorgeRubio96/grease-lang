@@ -1,15 +1,10 @@
 import sys
-import ply.lex as lex
-import ply.yacc as yacc
-from indents import Indents
-from scanner import *
-from parser import *
+from scanner import grease_lexer
+from parser import grease_parser
 
 
 
 def main():
-    lexer = Indents(lex.lex())
-    parser = yacc.yacc()
     data = ''
 
     if len(sys.argv) > 1:
@@ -19,7 +14,7 @@ def main():
         for line in sys.stdin:
             data = data + line
 
-    result = parser.parse(data,lexer=lexer, debug=False, tracking=True)
+    result = grease_parser.parse(data,lexer=grease_lexer, debug=False, tracking=True)
 
 if __name__ == '__main__':
     main()
