@@ -1,6 +1,6 @@
 from grease.core.variable_table import VariableTable
 from grease.core.function_directory import FunctionDirectory
-from grease.core.exceptions import VariableRedefinition, MethodRedefinition
+from grease.core.exceptions import VariableRedefinition, FunctionRedefinition
 
 class GreaseStruct:
     def __init__(self, variables={}, interface=None, functions={}):
@@ -23,13 +23,13 @@ class GreaseStructBuilder:
 
     def add_member(self, name, member):
         if name in self._variables:
-            raise VariableRedefiniton(name)
+            raise VariableRedefinition(name)
         
         self._variables[name] = member
 
     def add_function(self, name, fn):
         if name in self._functions:
-            raise MethodRedefinition(name)
+            raise FunctionRedefinition(name)
 
         self._functions[name] = fn
 

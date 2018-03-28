@@ -3,7 +3,7 @@ from grease.scanner import tokens
 from grease.greaser import Greaser
 from grease.core.variable import GreaseVarBuilder
 from grease.core.function import GreaseFnBuilder
-from grease.core.struct import GreaseStructBuilder
+from grease.core.struct import GreaseStructBuilder, GreaseStruct
 from grease.core.exceptions import GreaseError
 from grease.core.quadruple import Quadruples, Quadruple, Operation
 from grease.core.stack import Stack
@@ -14,7 +14,7 @@ greaser = Greaser()
 #Quads global structures
 op_stack = Stack()
 operand_Stack = Stack()
-type_Stack = Stack()
+stack = Stack()
 #Temp QuadQueue
 tmp_quad_stack = Stack()
 
@@ -85,7 +85,6 @@ def p_declaration(p):
 
 def p_variable(p):
   '''variable : VAR ID variable_body NEW_LINE'''
-  global var_builder
   try:
     v = var_builder.build()
     greaser.add_variable(p[2], v)
@@ -127,12 +126,6 @@ def p_function(p):
     e.print(p.lineno(2))
     raise
 
-  #global_addr = operand_Stack.pop()
-  #type_Stack.pop()
-  #greaser.build_and_push_quad(Operation.EQ, global_addr, None, next_id)
-  #operand_Stack.push(next_id)
-  #type_Stack.push('function.type')
-
 def p_optional_method_declaration(p):
   '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
                                  | empty'''
@@ -145,6 +138,7 @@ def p_optional_method_declaration(p):
       var_builder.reset()
       
       fn_builder.add_param(p[2], var)
+      p[0] = p[4]
     except GreaseError as e:
       e.print(p.lineno(2))
       raise
@@ -248,7 +242,7 @@ def p_compound_type(p):
   '''compound_type : struct_id
                    | array
                    | basic_type'''
-  if isinstance(p[1], str):
+  if isinstance(p[1], GreaseStruct):
     p[0] = GreaseType(GreaseTypeClass.Struct, p[1])
   else:
     p[0] = p[1]
@@ -275,12 +269,10 @@ def p_array_more_dimens(p):
 def p_struct_id(p):
   '''struct_id : ID'''
   try:
-    greaser.find_struct(p[1])
+    p[0] = greaser.find_struct(p[1])
   except GreaseError as e:
     e.print(p.lineno(1))
     raise
-  
-  p[0] = p[1]
 
 def p_block(p):
   '''block : INDENT block_body DEDENT'''
@@ -374,15 +366,13 @@ def p_optional_and(p):
 
 def p_negation(p):
   '''negation : optional_not rel_expr'''
-  quad = Quadruple()
-  quad.operator = Operation.NOT
-  op_stack.push(quad)
+  pass
 
 def p_optional_not(p):
   '''optional_not : NOT
                   | empty'''
   quad = Quadruple()
-  quad.operator = Operation.U_MINUS
+  quad.operator = Operation.NOT
   op_stack.push(quad)
 
 def p_rel_expr(p):
@@ -390,9 +380,11 @@ def p_rel_expr(p):
   pass
 
 def p_optional_comparison(p):
-  '''optional_comparison : comparison_operator rel_expr
+  '''optional_comparison : optional_not comparison_operator rel_expr
                          | empty'''
-  pass
+  quad = Quadruple()
+  quad.operator = Operation.GT
+  op_stack.push(quad)
 
 def p_comparison_operator(p):
   '''comparison_operator : EQ
@@ -400,9 +392,7 @@ def p_comparison_operator(p):
                          | LT
                          | GE
                          | LE'''
-  quad = Quadruple()
-  quad.operator = Operation.GT
-  op_stack.push(quad)
+  pass
 
 def p_arith_expr(p):
   '''arith_expr : term optional_arith_op'''
@@ -449,7 +439,7 @@ def p_value(p):
 
 def p_np_found_variable(p):
   '''np_found_variable : '''
-  print('Found variable {} in expr line {}'.format(p[-1],p.lineno(-1)))
+  pass
 
 def p_fn_call(p):
   '''fn_call : sub_struct OPEN_PAREN optional_arguments CLOSE_PAREN'''

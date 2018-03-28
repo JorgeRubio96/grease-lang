@@ -46,7 +46,7 @@ class StructRedefinition(GreaseError):
         self.msg = msg
         self.err_name = 'Struct redefinition'
 
-class MethodRedefinition(GreaseError):
+class FunctionRedefinition(GreaseError):
     def __init__(self, msg):
         self.msg = msg
         self.err_name = 'Method redefinition'

@@ -42,9 +42,6 @@ class Quadruple(object):
 		self.right_operand = right_operand
 		self.result = result
 
-	def get_op_Stack():
-		return op_Stack
-
 	def get_list(self):
 		op = Operation(self.operator).value
 		return [op, self.left_operand, self.right_operand, self.result]
@@ -79,13 +76,7 @@ class Quadruples(object):
 		quad.id = cls.next_free_quad
 		cls.quad_list.append(quad)
 		cls.next_free_quad = len(cls.quad_list)
-		#For test only
-		x = 0
-		while x < len(cls.quad_list):
-			var = cls.quad_list[x]
-			print(var)
-			x+=1
-
+		
 	@classmethod
 	def pop_quad(cls):
 		cls.next_free_quad = len(cls.quad_list) - 1

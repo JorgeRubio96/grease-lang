@@ -46,7 +46,7 @@ fn main(): Int
     print "The perimeter is"
     print sqr.Perimeter()
 
-    if not a[1]->b[2]->c[3]->d[4] gt 2 and c lt b:
+    if a[1]->b[2]->c[3]->d[4] gt 2 and c not lt b:
         print "Ded\n"
 
     return 0
