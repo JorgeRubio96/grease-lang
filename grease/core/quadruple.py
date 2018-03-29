@@ -30,7 +30,7 @@ class Operation(Enum):
 
 class Quadruple(object):
 	def __init__(self):
-		self.id = -1 # auto_incremented
+		self.address = -1 # auto_incremented
 		self.operator = None
 		self.left_operand = None
 		self.right_operand = None
@@ -61,7 +61,7 @@ class Quadruples(object):
 	#Op Methods
 	@classmethod
 	def push_op(self, op):
-		op.id = self.next_free_quad
+		op.address = self.next_free_quad
 		self.op_Stack.push(op)
 		self.next_free_quad = self.op_Stack.size
 
@@ -73,7 +73,7 @@ class Quadruples(object):
 	# Quad Methods
 	@classmethod
 	def push_quad(cls, quad):
-		quad.id = cls.next_free_quad
+		quad.address = cls.next_free_quad
 		cls.quad_list.append(quad)
 		cls.next_free_quad = len(cls.quad_list)
 		
