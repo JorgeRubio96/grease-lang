@@ -1,12 +1,13 @@
 from grease.core.variable_table import VariableTable
 from grease.core.function_directory import FunctionDirectory
-from grease.core.exceptions import VariableRedefinition, FunctionRedefinition
+from grease.core.interface_table import InterfaceTable
+from grease.core.exceptions import VariableRedefinition, FunctionRedefinition, DuplicateInterface
 
 class GreaseStruct:
-    def __init__(self, variables={}, interface=None, functions={}):
+    def __init__(self, variables={}, interfaces={}, functions={}):
         self.variables = VariableTable()
         self.functions = FunctionDirectory()
-        self.interface = interface
+        self.interfaces = InterfaceTable()
 
         for name, varable in variables.items():
             self.variables.add_variable(name, varable)
@@ -14,12 +15,14 @@ class GreaseStruct:
         for name, fn in functions.items():
             self.functions.add_function(name, fn)
 
+        for name, interface in interfaces.items():
+            self.interfaces.add_interface(name, interface)
 
 class GreaseStructBuilder:
     def __init__(self):
         self._variables = {}
         self._functions = {}
-        self._interface = None
+        self._interfaces = {}
 
     def add_member(self, name, member):
         if name in self._variables:
@@ -33,13 +36,16 @@ class GreaseStructBuilder:
 
         self._functions[name] = fn
 
-    def add_interface(self, interface):
-        self._interface = interface
+    def add_interface(self, name, interface):
+        if name in self._interfaces:
+            raise DuplicateInterface(name)
+
+        self._interfaces[name] = interface
 
     def build(self):
-        return GreaseStruct(self._variables, self._interface, self._functions)
+        return GreaseStruct(self._variables, self._interfaces, self._functions)
 
     def reset(self):
         self._variables = {}
         self._functions = {}
-        self._interface = None
+        self._interfaces = {}

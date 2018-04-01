@@ -1,3 +1,4 @@
+import sys
 import ply.yacc as yacc
 from grease.scanner import tokens
 from grease.greaser import Greaser
@@ -100,7 +101,6 @@ def p_variable(p):
 def p_variable_body(p):
   '''variable_body : COLON compound_type
                    | EQUALS expression'''
-  global var_builder
   if p[1] is ':':
     # Type assignment
     t = p[2]
@@ -116,7 +116,6 @@ def p_variable_body(p):
 
 def p_function(p):
   '''function : FN optional_method_declaration ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE block'''
-  global fn_builder
   try:
     fn = fn_builder.build()
     fn_builder.reset()
@@ -127,18 +126,18 @@ def p_function(p):
     raise
 
 def p_optional_method_declaration(p):
-  '''optional_method_declaration : OPEN_PAREN ID COLON struct_id CLOSE_PAREN
+  '''optional_method_declaration : OPEN_PAREN ID COLON ID CLOSE_PAREN
                                  | empty'''
-  global var_builder, fn_builder
   if len(p) > 2:
     try:
-      t = GreaseType(GreaseTypeClass.Struct, p[4])
+      struct = greaser.find_struct(p[4])
+      t = GreaseType(GreaseTypeClass.Struct, struct)
       var_builder.add_type(t)
       var = var_builder.build()
       var_builder.reset()
       
       fn_builder.add_param(p[2], var)
-      p[0] = p[4]
+      p[0] = struct
     except GreaseError as e:
       e.print(p.lineno(2))
       raise
@@ -177,7 +176,6 @@ def p_alias(p):
 
 def p_struct(p):
   '''struct : STRUCT ID optional_struct_interfaces NEW_LINE INDENT struct_member more_struct_members DEDENT'''
-  global struct_builder
   try:
     s = struct_builder.build()
     greaser.add_struct(p[2], s)
@@ -188,18 +186,21 @@ def p_struct(p):
 
 # Maybe later: Multiple interfaces per struct
 def p_optional_struct_interfaces(p):
-  '''optional_struct_interfaces : COLON ID
+  '''optional_struct_interfaces : COLON more_interfaces ID
                                 | empty'''
-  global struct_builder
   try:
     struct_builder.add_interface(p[2])
   except GreaseError as e:
     e.print(p.lineno(2))
     raise
 
+def p_more_interfaces(p):
+  '''more_interfaces : more_interfaces ID COMMA
+                     | empty'''
+  pass
+
 def p_struct_member(p):
   '''struct_member : ID COLON basic_type NEW_LINE'''
-  global struct_builder, var_builder
   try:
     var_builder.add_type(p[3])
     struct_builder.add_member(p[1], var_builder.build())
@@ -239,11 +240,16 @@ def p_basic_type(p):
     p[0] = p[1]
 
 def p_compound_type(p):
-  '''compound_type : struct_id
+  '''compound_type : ID
                    | array
                    | basic_type'''
-  if isinstance(p[1], GreaseStruct):
-    p[0] = GreaseType(GreaseTypeClass.Struct, p[1])
+  if isinstance(p[1], str):
+    try:
+      type_data = greaser.find_struct(p[1])
+      p[0] = GreaseType(GreaseTypeClass.Struct, type_data)
+    except GreaseError as e:
+      e.print(p.lineno(1))
+      raise
   else:
     p[0] = p[1]
 
@@ -265,14 +271,6 @@ def p_array_more_dimens(p):
     p[0] = [p[3]] + p[1]
   else:
     p[0] = []
-
-def p_struct_id(p):
-  '''struct_id : ID'''
-  try:
-    p[0] = greaser.find_struct(p[1])
-  except GreaseError as e:
-    e.print(p.lineno(1))
-    raise
 
 def p_block(p):
   '''block : INDENT block_body DEDENT'''
@@ -332,10 +330,7 @@ def p_scan(p):
 
 def p_expression(p):
   '''expression : logic_expr np_check_or optional_or'''
-  if p[2] is None:
-    p[0] = p[1]
-  else:
-    p[0] = p[2]
+  pass
 
 def p_np_check_or(p):
   '''np_check_or : '''
@@ -495,11 +490,18 @@ def p_main(p):
   '''main : FN MAIN np_main_fill_quad OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
   # greaser.build_and_push_quad(Operation.END, None, None, None)
 
+def p_main_error(p):
+  '''main : FN MAIN error'''
+  # Kill compilation process or the defaulted state will loop yacc
+  sys.exit()
+
 def p_np_main_fill_quad(p):
   '''np_main_fill_quad : '''
   tmp_end = Quadruples.pop_jump()
-  tmp_count = Quadruples.next_free_quad
-  Quadruples.fill_missing_quad(tmp_end, tmp_count)
+
+  if tmp_end is not None:
+    tmp_count = Quadruples.next_free_quad
+    Quadruples.fill_missing_quad(tmp_end, tmp_count)
 
 def p_const(p):
   '''const : CONST_INT

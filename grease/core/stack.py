@@ -8,8 +8,8 @@ class Stack(object):
 	def pop(self):
 		if(len(self.values) > 0):
 			return self.values.pop()
-		else :
-			print("Empty Stack")
+		else:
+			return None
 	def peek(self):
 		if(len(self.values) == 0):
 			return None

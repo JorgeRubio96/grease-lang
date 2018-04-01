@@ -9,7 +9,7 @@ reserved = {
     'print': 'PRINT',
     'and': 'AND',
     'or': 'OR',
-    'Boolean': 'BOOL',
+    'Bool': 'BOOL',
     'Int': 'INT',
     'Float': 'FLOAT',
     'Char': 'CHAR',

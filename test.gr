@@ -7,11 +7,33 @@ interface Shape
     fn Area(): Float
     fn Perimeter(): Float
 
-struct Rect : Shape
+interface Compareable
+    fn Gt(other: Compareable *): Bool
+    fn Lt(other: Compareable *): Bool
+    fn Eq(other: Compareable *): Bool
+    fn Ge(other: Compareable *): Bool
+    fn Le(other: Compareable *): Bool
+
+struct Rect : Shape, Compareable
     x: Float
     y: Float
     w: Float
     h: Float
+
+fn (r: Rect) Gt(other: Rect *): Bool
+    return r.Area() gt other->Area()
+
+fn (r: Rect) Lt(other: Rect *): Bool
+    return r.Area() lt other->Area()
+
+fn (r: Rect) Eq(other: Rect *): Bool
+    return r.Area() eq other->Area()
+
+fn (r: Rect) Ge(other: Rect *): Bool
+    return r.Area() ge other->Area()
+
+fn (r: Rect) Le(other: Rect *): Bool
+    return r.Area() le other->Area()
 
 fn (r: Rect) Area(): Float
     return r.w * r.h
@@ -40,11 +62,18 @@ fn main(): Int
     sqr.y = 0
     scan sqr.w
     scan sqr.h
+
+    var shape : Shape
+    shape = sqr
+
     print "The area is"
-    print sqr.Area()
+    print shape.Area()
     print '\n'
     print "The perimeter is"
-    print sqr.Perimeter()
+    print shape.Perimeter()
+
+    if shape.Eq(sqr):
+        print "They are equal"
 
     if a[1]->b[2]->c[3]->d[4] gt 2 and c not lt b:
         print "Ded\n"

@@ -6,8 +6,9 @@ from grease.core.quadruple import Quadruple, Quadruples, Operation
 from grease.semantic_cube import SemanticCube
 from grease.core.variable_table import VariableTable
 from grease.core.struct_table import StructTable
+from grease.core.interface_table import InterfaceTable
 from grease.core.function_directory import FunctionDirectory
-from grease.core.exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, UndefinedMember, UndefinedType
+from grease.core.exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, UndefinedMember, UndefinedType, UndefinedInterface
 from grease.core.stack import Stack
 
 type_class_dict = {
@@ -57,6 +58,7 @@ class Greaser:
     self._structs = StructTable()
     self._scope = self._global_vars
     self._current_fn = None
+    self._interfaces = InterfaceTable()
 
   def find_function(self, name):
     fn_name = name.pop()
@@ -104,6 +106,14 @@ class Greaser:
 
     return struct
 
+  def find_interface(self, name):
+    interface = self._interfaces.find_interface(name)
+
+    if interface is None:
+      raise UndefinedInterface(name)
+
+    return interface
+
   def add_variable(self, name, var):
     self._scope.add_variable(name,var)
 
@@ -113,14 +123,17 @@ class Greaser:
     else:
       self._global_fns.add_function(name, fn)
 
-  def add_struct(self, id, struct):
-    self._structs.add_struct(id, struct)
+  def add_struct(self, name, struct):
+    self._structs.add_struct(name, struct)
+
+  def add_interface(self, name, interface):
+    self._interfaces.add_interface(name, interface)
 
   def open_scope(self):
     self._scope = VariableTable(self._scope)
 
   def close_scope(self):
-    self._scope = self._current_fn.close_scope()
+    self._scope = self._scope.parent
 
   @staticmethod
   def basic_type_from_text(name):
