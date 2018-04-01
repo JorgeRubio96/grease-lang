@@ -335,6 +335,20 @@ def p_expression(p):
 def p_np_check_or(p):
   '''np_check_or : '''
   # Revisar si hay un OR en el tope de la pila de operadores
+  if op_stack.isEmpty():
+    pass
+  else :
+    if op_stack.peek() == 'OR':
+      l = []
+      i = 1
+      while i <= len(Operation):
+        if Operation(i).value == Operation.AND.value or Operation(i).value == Operation.OR.value :
+          l.append(Operation(i).value)
+          i += 1
+      greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
+      op_stack.pop()
+    else :
+      pass
 
 def p_optional_or(p):
   '''optional_or : OR expression
@@ -351,6 +365,24 @@ def p_logic_expr(p):
   else:
     p[0] = p[2]
 
+def p_np_check_and(p):
+  '''np_check_and : '''
+  # Revisar si hay un AND en el tope de la pila de operadores
+  if op_stack.isEmpty():
+    pass
+  else :
+    if op_stack.peek() == 'AND':
+      l = []
+      i = 1
+      while i <= len(Operation):
+        if Operation(i).value == Operation.AND.value or Operation(i).value == Operation.OR.value :
+          l.append(Operation(i).value)
+          i += 1
+      greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
+      op_stack.pop()
+    else :
+      pass
+
 def p_optional_and(p):
   '''optional_and : AND logic_expr
                   | empty'''
@@ -363,6 +395,24 @@ def p_negation(p):
   '''negation : optional_not rel_expr'''
   pass
 
+def p_np_check_negation(p):
+  '''np_check_negation : '''
+  # Revisar si hay un NOT en el tope de la pila de operadores
+  if op_stack.isEmpty():
+    pass
+  else :
+    if op_stack.peek() == 'NOT':
+      l = []
+      i = 1
+      while i <= len(Operation):
+        if Operation(i).value == Operation.NOT.value:
+          l.append(Operation(i).value)
+          i += 1
+      greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
+      op_stack.pop()
+    else :
+      pass
+
 def p_optional_not(p):
   '''optional_not : NOT
                   | empty'''
@@ -373,6 +423,24 @@ def p_optional_not(p):
 def p_rel_expr(p):
   '''rel_expr : arith_expr optional_comparison'''
   pass
+
+def p_np_check_comparison(p):
+  '''np_check_comparison : '''
+  # Revisar si hay un Comparison operator en el tope de la pila de operadores
+  if op_stack.isEmpty():
+    pass
+  else :
+    l = []
+    i = 1
+    while i <= len(Operation):
+      if Operation(i).value == Operation..value or Operation(i).value == Operation..value or :
+        l.append(Operation(i).value)
+        i += 1
+    if op_stack.peek() in l:
+      greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
+      op_stack.pop()
+    else :
+      pass
 
 def p_optional_comparison(p):
   '''optional_comparison : optional_not comparison_operator rel_expr
@@ -387,7 +455,9 @@ def p_comparison_operator(p):
                          | LT
                          | GE
                          | LE'''
-  pass
+  quad = Quadruple()
+  quad.operator = greaser.operators_dict[p[1]]
+  op_stack.push(quad)
 
 def p_arith_expr(p):
   '''arith_expr : term optional_arith_op'''
@@ -398,7 +468,7 @@ def p_optional_arith_op(p):
                         | MINUS arith_expr
                         | empty'''
   quad = Quadruple()
-  quad.operator = Operation.PLUS
+  quad.operator = greaser.operators_dict[p[1]]
   op_stack.push(quad)
 
 def p_term(p):
@@ -410,7 +480,7 @@ def p_optional_mult_div(p):
                         | DIVIDE term
                         | empty'''
   quad = Quadruple()
-  quad.operator = Operation.TIMES
+  quad.operator = greaser.operators_dict[p[1]]
   op_stack.push(quad)
 
 def p_factor(p):

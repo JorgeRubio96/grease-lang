@@ -151,7 +151,7 @@ class Greaser:
 
   #Exp quad helper
   @staticmethod
-  def exp_quad_helper(p, op_list):
+  def exp_quad_helper(p, op_list, operator_stack, type_stack,operand_stack):
     """Exp quad helper:
     Pops 2 operands from typestack and operand stack, checks type and calls build_and_push_quad"""
     if operator_stack.isEmpty():
@@ -166,7 +166,7 @@ class Greaser:
       raise TypeMismatch('')
     o1 = operand_stack.pop()
     o2 = operand_stack.pop()
-    tmp_var_id = SemanticInfo.get_next_var_id(return_type)
+    tmp_var_id = SemanticInfo.get_next_var_address(return_type)
 
     # Generate Quadruple and push it to the list
     Greaser.build_and_push_quad(op, o2, o1, tmp_var_id)
