@@ -5,6 +5,7 @@ from grease.greaser import Greaser
 from grease.core.variable import GreaseVarBuilder
 from grease.core.function import GreaseFnBuilder
 from grease.core.struct import GreaseStructBuilder, GreaseStruct
+from grease.core.interface import GreaseInterface
 from grease.core.exceptions import GreaseError
 from grease.core.quadruple import Quadruples, Quadruple, Operation
 from grease.core.stack import Stack
@@ -115,15 +116,12 @@ def p_variable_body(p):
 
 
 def p_function(p):
-  '''function : FN optional_method_declaration ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE block'''
-  try:
-    fn = fn_builder.build()
-    fn_builder.reset()
-    greaser.add_function(p[3], fn, p[2])
+  '''function : FN optional_method_declaration function_id OPEN_PAREN optional_params CLOSE_PAREN optional_return_type np_insert_function NEW_LINE block'''
+  pass
 
-  except GreaseError as e:
-    e.print(p.lineno(2))
-    raise
+def p_function_id(p):
+  '''function_id : ID'''
+  pass
 
 def p_optional_method_declaration(p):
   '''optional_method_declaration : OPEN_PAREN ID COLON ID CLOSE_PAREN
@@ -137,7 +135,7 @@ def p_optional_method_declaration(p):
       var_builder.reset()
       
       fn_builder.add_param(p[2], var)
-      p[0] = struct
+      fn_builder.add_struct(struct)
     except GreaseError as e:
       e.print(p.lineno(2))
       raise
@@ -170,34 +168,61 @@ def p_optional_return_type(p):
       e.print(p.lineno(2))
       raise
 
+def p_np_insert_function(p):
+  '''np_insert_function : '''
+  try:
+    name, struct, fn = fn_builder.build()
+    fn_builder.reset()
+    greaser.add_function(name, fn, struct)
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
+
 def p_alias(p):
   '''alias : ALIAS compound_type AS ID NEW_LINE'''
   pass
 
 def p_struct(p):
-  '''struct : STRUCT ID optional_struct_interfaces NEW_LINE INDENT struct_member more_struct_members DEDENT'''
+  '''struct : STRUCT struct_id optional_struct_interfaces NEW_LINE np_insert_struct INDENT struct_member more_struct_members DEDENT'''
+  pass
+
+def p_struct_error(p):
+  '''struct : STRUCT struct_id COLON error'''
+  # Prevents looping on struct error
+  pass
+
+def p_struct_id(p):
+  '''struct_id : ID'''
+  struct_builder.add_name(p[1])
+
+def p_optional_struct_interfaces(p):
+  '''optional_struct_interfaces : COLON more_interfaces interface_id
+                                | empty'''
+  pass
+
+def p_interface_id(p):
+  '''interface_id : ID'''
   try:
-    s = struct_builder.build()
-    greaser.add_struct(p[2], s)
+    interface = greaser.find_interface(p[1])
+    struct_builder.add_interface(p[1], interface)
+  except GreaseError as e:
+    e.print(p.lineno(1))
+    raise
+
+def p_more_interfaces(p):
+  '''more_interfaces : more_interfaces interface_id COMMA
+                     | empty'''
+  pass
+
+def p_np_insert_struct(p):
+  '''np_insert_struct : '''
+  try:
+    name, s = struct_builder.build()
+    greaser.add_struct(name, s)
     struct_builder.reset()
   except GreaseError as e:
     e.print(p.lineno(2))
     raise
-
-# Maybe later: Multiple interfaces per struct
-def p_optional_struct_interfaces(p):
-  '''optional_struct_interfaces : COLON more_interfaces ID
-                                | empty'''
-  try:
-    struct_builder.add_interface(p[2])
-  except GreaseError as e:
-    e.print(p.lineno(2))
-    raise
-
-def p_more_interfaces(p):
-  '''more_interfaces : more_interfaces ID COMMA
-                     | empty'''
-  pass
 
 def p_struct_member(p):
   '''struct_member : ID COLON basic_type NEW_LINE'''
@@ -215,7 +240,15 @@ def p_more_struct_members(p):
   pass
 
 def p_interface(p):
-  '''interface : INTERFACE ID NEW_LINE INDENT interface_function more_interface_functions DEDENT'''
+  '''interface : INTERFACE ID np_insert_interface NEW_LINE INDENT interface_function more_interface_functions DEDENT'''
+  pass
+
+def p_np_insert_interface(p):
+  '''np_insert_interface : '''
+  greaser.add_interface(p[-1], GreaseInterface())
+
+def p_interface_error(p):
+  '''interface : INTERFACE ID error'''
   pass
 
 def p_interface_function(p):
@@ -245,8 +278,7 @@ def p_compound_type(p):
                    | basic_type'''
   if isinstance(p[1], str):
     try:
-      type_data = greaser.find_struct(p[1])
-      p[0] = GreaseType(GreaseTypeClass.Struct, type_data)
+      p[0] = greaser.find_type(p[1])
     except GreaseError as e:
       e.print(p.lineno(1))
       raise
@@ -335,20 +367,20 @@ def p_expression(p):
 def p_np_check_or(p):
   '''np_check_or : '''
   # Revisar si hay un OR en el tope de la pila de operadores
-  if op_stack.isEmpty():
-    pass
-  else :
-    if op_stack.peek() == 'OR':
-      l = []
-      i = 1
-      while i <= len(Operation):
-        if Operation(i).value == Operation.AND.value or Operation(i).value == Operation.OR.value :
-          l.append(Operation(i).value)
-          i += 1
-      greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
-      op_stack.pop()
-    else :
-      pass
+  # if op_stack.isEmpty():
+  #   pass
+  # else :
+  #   if op_stack.peek() == 'OR':
+  #     l = []
+  #     i = 1
+  #     while i <= len(Operation):
+  #       if Operation(i).value == Operation.AND.value or Operation(i).value == Operation.OR.value :
+  #         l.append(Operation(i).value)
+  #         i += 1
+  #     greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
+  #     op_stack.pop()
+  #   else :
+  #     pass
 
 def p_optional_or(p):
   '''optional_or : OR expression
@@ -359,7 +391,7 @@ def p_optional_or(p):
     op_stack.push(quad)
 
 def p_logic_expr(p):
-  '''logic_expr : negation optional_and'''
+  '''logic_expr : negation np_check_and optional_and'''
   if p[2] is None:
     p[0] = p[1]
   else:
@@ -368,20 +400,20 @@ def p_logic_expr(p):
 def p_np_check_and(p):
   '''np_check_and : '''
   # Revisar si hay un AND en el tope de la pila de operadores
-  if op_stack.isEmpty():
-    pass
-  else :
-    if op_stack.peek() == 'AND':
-      l = []
-      i = 1
-      while i <= len(Operation):
-        if Operation(i).value == Operation.AND.value or Operation(i).value == Operation.OR.value :
-          l.append(Operation(i).value)
-          i += 1
-      greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
-      op_stack.pop()
-    else :
-      pass
+  # if op_stack.isEmpty():
+  #   pass
+  # else :
+  #   if op_stack.peek() == 'AND':
+  #     l = []
+  #     i = 1
+  #     while i <= len(Operation):
+  #       if Operation(i).value == Operation.AND.value or Operation(i).value == Operation.OR.value :
+  #         l.append(Operation(i).value)
+  #         i += 1
+  #     greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
+  #     op_stack.pop()
+  #   else :
+  #     pass
 
 def p_optional_and(p):
   '''optional_and : AND logic_expr
@@ -392,26 +424,26 @@ def p_optional_and(p):
     op_stack.push(quad)
 
 def p_negation(p):
-  '''negation : optional_not rel_expr'''
+  '''negation : np_check_negation optional_not rel_expr'''
   pass
 
 def p_np_check_negation(p):
   '''np_check_negation : '''
   # Revisar si hay un NOT en el tope de la pila de operadores
-  if op_stack.isEmpty():
-    pass
-  else :
-    if op_stack.peek() == 'NOT':
-      l = []
-      i = 1
-      while i <= len(Operation):
-        if Operation(i).value == Operation.NOT.value:
-          l.append(Operation(i).value)
-          i += 1
-      greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
-      op_stack.pop()
-    else :
-      pass
+  # if op_stack.isEmpty():
+  #   pass
+  # else :
+  #   if op_stack.peek() == 'NOT':
+  #     l = []
+  #     i = 1
+  #     while i <= len(Operation):
+  #       if Operation(i).value == Operation.NOT.value:
+  #         l.append(Operation(i).value)
+  #         i += 1
+  #     greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
+  #     op_stack.pop()
+  #   else :
+  #     pass
 
 def p_optional_not(p):
   '''optional_not : NOT
@@ -421,26 +453,24 @@ def p_optional_not(p):
   op_stack.push(quad)
 
 def p_rel_expr(p):
-  '''rel_expr : arith_expr optional_comparison'''
+  '''rel_expr : arith_expr np_check_comparison optional_comparison'''
   pass
 
 def p_np_check_comparison(p):
   '''np_check_comparison : '''
   # Revisar si hay un Comparison operator en el tope de la pila de operadores
-  if op_stack.isEmpty():
-    pass
-  else :
-    l = []
-    i = 1
-    while i <= len(Operation):
-      if Operation(i).value == Operation..value or Operation(i).value == Operation..value or :
-        l.append(Operation(i).value)
-        i += 1
-    if op_stack.peek() in l:
-      greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
-      op_stack.pop()
-    else :
-      pass
+  # if op_stack.isEmpty():
+  #   pass
+  # else :
+  #   l = []
+  #   i = 1
+  #   while i <= len(Operation):
+  #     if Operation(i).value == Operation.value or Operation(i).value == Operation.value or :
+  #       l.append(Operation(i).value)
+  #       i += 1
+  #   if op_stack.peek() in l:
+  #     greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
+  #     op_stack.pop()
 
 def p_optional_comparison(p):
   '''optional_comparison : optional_not comparison_operator rel_expr
@@ -456,7 +486,7 @@ def p_comparison_operator(p):
                          | GE
                          | LE'''
   quad = Quadruple()
-  quad.operator = greaser.operators_dict[p[1]]
+  quad.operator = Greaser.operator_from_text(p[1])
   op_stack.push(quad)
 
 def p_arith_expr(p):
@@ -468,7 +498,7 @@ def p_optional_arith_op(p):
                         | MINUS arith_expr
                         | empty'''
   quad = Quadruple()
-  quad.operator = greaser.operators_dict[p[1]]
+  quad.operator = Greaser.operator_from_text(p[1])
   op_stack.push(quad)
 
 def p_term(p):
@@ -480,7 +510,7 @@ def p_optional_mult_div(p):
                         | DIVIDE term
                         | empty'''
   quad = Quadruple()
-  quad.operator = greaser.operators_dict[p[1]]
+  quad.operator = Greaser.operator_from_text(p[1])
   op_stack.push(quad)
 
 def p_factor(p):
@@ -562,8 +592,9 @@ def p_main(p):
 
 def p_main_error(p):
   '''main : FN MAIN error'''
-  # Kill compilation process or the defaulted state will loop yacc
-  sys.exit()
+  # Consume parse error to continue reporting additional errors
+  # Clear the list of quadruples. Nothing to compile.
+  Quadruples.quad_list.clear()
 
 def p_np_main_fill_quad(p):
   '''np_main_fill_quad : '''

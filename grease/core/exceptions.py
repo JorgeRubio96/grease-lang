@@ -18,6 +18,11 @@ class UndefinedFunction(GreaseError):
         self.msg = msg
         self.err_name = 'Undefined function'
 
+class UndefinedStruct(GreaseError):
+    def __init__(self, msg):
+        self.msg = msg
+        self.err_name = 'Undefined struct'
+
 class UndefinedType(GreaseError):
     def __init__(self, msg):
         self.msg = msg

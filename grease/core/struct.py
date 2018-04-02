@@ -23,6 +23,7 @@ class GreaseStructBuilder:
         self._variables = {}
         self._functions = {}
         self._interfaces = {}
+        self._name = ''
 
     def add_member(self, name, member):
         if name in self._variables:
@@ -41,9 +42,12 @@ class GreaseStructBuilder:
             raise DuplicateInterface(name)
 
         self._interfaces[name] = interface
+    
+    def add_name(self, name):
+        self._name = name
 
     def build(self):
-        return GreaseStruct(self._variables, self._interfaces, self._functions)
+        return self._name, GreaseStruct(self._variables, self._interfaces, self._functions)
 
     def reset(self):
         self._variables = {}

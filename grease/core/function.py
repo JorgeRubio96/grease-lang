@@ -26,6 +26,8 @@ class GreaseFnBuilder:
         self._params = {}
         self._return_type = None
         self._return_data = None
+        self._name = None
+        self._struct = None
 
     def add_param(self, param_name, param):
         if param_name in self._params:
@@ -36,8 +38,14 @@ class GreaseFnBuilder:
         self._return_type = return_type
         self._return_data = return_data
 
+    def add_name(self, name):
+        self._name = name
+
+    def add_struct(self, struct):
+        self._struct = struct
+
     def build(self):
-        return GreaseFn(self._params, self._return_type, self._return_data)
+        return self._name, self._struct, GreaseFn(self._params, self._return_type, self._return_data)
 
     def reset(self):
         self._params = {}

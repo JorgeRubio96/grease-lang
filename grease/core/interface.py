@@ -1,7 +1,7 @@
 from grease.core.function_directory import FunctionDirectory
 from grease.core.exceptions import FunctionRedefinition
 
-class Interface:
+class GreaseInterface:
     def __init__(self, functions={}):
         self.functions = FunctionDirectory()
 
