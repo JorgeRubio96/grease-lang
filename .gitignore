@@ -104,3 +104,6 @@ ENV/
 # Ply generated files
 parser.out
 parsetab.py
+
+#Vim config
+.vimrc

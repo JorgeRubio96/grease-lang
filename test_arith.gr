@@ -1,0 +1,8 @@
+main() : Int
+  var a : Int
+  var b = 2
+  
+  scan a
+
+  print a + b
+  return 0

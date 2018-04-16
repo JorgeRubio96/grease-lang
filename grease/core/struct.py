@@ -8,15 +8,24 @@ class GreaseStruct:
         self.variables = VariableTable()
         self.functions = FunctionDirectory()
         self.interfaces = InterfaceTable()
-
+        self.total_size = 0
+        self.next_addr = 0
+        
         for name, varable in variables.items():
+            variable.address = self.next_addr
             self.variables.add_variable(name, varable)
+            self.next_addr += 1
 
         for name, fn in functions.items():
             self.functions.add_function(name, fn)
 
         for name, interface in interfaces.items():
             self.interfaces.add_interface(name, interface)
+
+    def add_variable(self, name, var):
+        var.address = self.next_addr
+        self.variables.add_variable(name, var)
+        self.next_addr += 1
 
 class GreaseStructBuilder:
     def __init__(self):

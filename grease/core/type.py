@@ -11,7 +11,7 @@ class GreaseTypeClass(Enum):
     Interface = 8
 
 class GreaseType:
-    def __init__(self, type_class, type_data=None, type_size=None):
+    def __init__(self, type_class, type_data=None, dimens=None):
         self.type_class = type_class
         self.type_data = type_data
-        self.type_size = type_size
+        self.dimens = dimens

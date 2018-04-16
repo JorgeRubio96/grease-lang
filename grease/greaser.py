@@ -2,7 +2,7 @@ from grease.core.struct import GreaseStruct
 from grease.core.variable import GreaseVar
 from grease.core.type import GreaseTypeClass, GreaseType
 from grease.core.function import GreaseFn
-from grease.core.quadruple import Quadruple, Quadruples, Operation
+from grease.core.quadruple import Quadruple, QuadrupleStore, Operation
 from grease.core.variable_table import VariableTable
 from grease.core.struct_table import StructTable
 from grease.core.interface_table import InterfaceTable
@@ -10,8 +10,8 @@ from grease.core.function_directory import FunctionDirectory
 from grease.core.exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction
 from grease.core.exceptions import UndefinedMember, UndefinedType, UndefinedInterface, UndefinedStruct
 from grease.core.stack import Stack
+from grease.core.substruct import SubstructNodeType
 from grease.semantic_cube import SemanticCube
-from grease.semantic_info import SemanticInfo
 
 type_class_dict = {
   'Int': GreaseTypeClass.Int,
@@ -37,13 +37,9 @@ operators_dict = {
   'JMP' : Operation.JMP,
   'AND' : Operation.AND,
   'OR' : Operation.OR,
-  'CONST' : Operation.CONST,
-  'WHILE' : Operation.WHILE,
   'PRINT' : Operation.PRINT,
   'SCAN' : Operation.SCAN,
   'EQUALS' : Operation.EQUALS,
-  'IF' : Operation.IF,
-  'ELSE' : Operation.ELSE
 }
 
 class Greaser:
@@ -52,29 +48,10 @@ class Greaser:
     self._global_fns = FunctionDirectory()
     self._structs = StructTable()
     self._scope = self._global_vars
-    self._current_fn = None
     self._interfaces = InterfaceTable()
-    self._semantic_info = SemanticInfo()
-    #Quads global structures
-    self._operator_stack = Stack()
-    self._operand_stack = Stack()
-    self._type_stack = Stack()
-    #Temp QuadQueue
-    self._tmp_quad_stack = Stack()
 
   def find_function(self, name):
-    fn_name = name.pop()
-  
-    if len(name) > 0:
-      var = self.find_variable(name)
-
-      if var.is_class(GreaseTypeClass.Struct) or var.is_class(GreaseTypeClass.Interface):
-        fn = var.type.type_data.functions.find_function(fn_name)
-
-      else:
-        raise TypeMismatch('{}'.format(name) + 'is not a Struct or Interface')
-    else:
-      fn = self._global_fns.find_function(fn_name)
+    fn = self._global_fns(name)
 
     if fn is None:
       raise UndefinedFunction(fn_name)
@@ -82,21 +59,10 @@ class Greaser:
     return fn
 
   def find_variable(self, name):
-    var_name = name[0]
-    var = self._scope.find_variable(var_name)
+    var = self._scope.find_variable(name)
 
     if var is None:
-      raise UndefinedVariable(var_name)
-
-    for var_name in name[1:]:
-      if var.is_class(GreaseTypeClass.Struct) or var.is_class(GreaseTypeClass.Interface):
-        struct = var.type.type_data
-        var = struct.variables.find_variable(var_name)
-
-        if var is None:
-          raise UndefinedMember(var_name)
-      else:
-        raise TypeMismatch('\"{}\" is not a struct'.format(var_name))
+      raise UndefinedVariable(name)
 
     return var
 
@@ -144,8 +110,9 @@ class Greaser:
   def add_interface(self, name, interface):
     self._interfaces.add_interface(name, interface)
 
-  def open_scope(self):
-    self._scope = VariableTable(self._scope)
+  def open_scope(self, scope):
+    scope.parent = self._scope
+    self._scope = scope
 
   def close_scope(self):
     self._scope = self._scope.parent

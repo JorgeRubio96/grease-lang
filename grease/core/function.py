@@ -7,8 +7,9 @@ class GreaseFn:
         self.return_type = return_type
         self.return_data = return_data
         self._variables = None
+        self.size = 0
 
-    def open_scope(self, global_vars):
+    def open_scope(self, global_vars=None):
         self._variables = VariableTable(global_vars)
         
         for name, param in self.params.items():
@@ -32,7 +33,7 @@ class GreaseFnBuilder:
     def add_param(self, param_name, param):
         if param_name in self._params:
             raise VariableRedefinition('{}'.format(param_name))
-        self._params[id] = param
+        self._params[param_name] = param
 
     def add_return_type(self, return_type, return_data=None):
         self._return_type = return_type

@@ -7,19 +7,25 @@ from grease.core.function import GreaseFnBuilder
 from grease.core.struct import GreaseStructBuilder, GreaseStruct
 from grease.core.interface import GreaseInterface
 from grease.core.exceptions import GreaseError
-from grease.core.quadruple import Quadruples, Quadruple, Operation
+from grease.core.quadruple import QuadrupleStore, Quadruple, Operation
 from grease.core.stack import Stack
 from grease.core.type import GreaseType, GreaseTypeClass
+from grease.core.substruct import SubstrctBuilder
 
 greaser = Greaser()
 
 #Quads global structures
-op_stack = Stack()
-operand_Stack = Stack()
-stack = Stack()
-#Temp QuadQueue
-tmp_quad_stack = Stack()
+operator_stack = Stack()
+operand_stack = Stack()
+type_stack = Stack()
+agregate_stack = Stack()
 
+current_struct = None
+
+next_global_address = 0
+next_local_address = 0
+
+quads = QuadrupleStore()
 
 struct_builder = GreaseStructBuilder()
 var_builder = GreaseVarBuilder()
@@ -88,6 +94,7 @@ def p_declaration(p):
 def p_variable(p):
   '''variable : VAR ID variable_body NEW_LINE'''
   try:
+    var_builder.add_address(next_local_id)
     v = var_builder.build()
     greaser.add_variable(p[2], v)
     var_builder.reset()
@@ -97,7 +104,6 @@ def p_variable(p):
   
   var_builder.reset()
 
-    
 
 def p_variable_body(p):
   '''variable_body : COLON compound_type
@@ -117,11 +123,12 @@ def p_variable_body(p):
 
 def p_function(p):
   '''function : FN optional_method_declaration function_id OPEN_PAREN optional_params CLOSE_PAREN optional_return_type np_insert_function NEW_LINE block'''
-  pass
+  # Close the function scope
+  greaser.close_scope()
 
 def p_function_id(p):
   '''function_id : ID'''
-  pass
+  fn_builder.add_name(p[1])
 
 def p_optional_method_declaration(p):
   '''optional_method_declaration : OPEN_PAREN ID COLON ID CLOSE_PAREN
@@ -149,6 +156,9 @@ def p_param(p):
   '''param : ID COLON basic_type'''
   try:
     var_builder.add_type(p[3])
+    var = var_builder.build()
+    var_builder.reset()
+    fn_builder.add_param(p[1], var)
   except GreaseError as e:
     e.print(p.lineno(3))
     raise
@@ -174,6 +184,7 @@ def p_np_insert_function(p):
     name, struct, fn = fn_builder.build()
     fn_builder.reset()
     greaser.add_function(name, fn, struct)
+    greaser.open_scope(fn.open_scope())
   except GreaseError as e:
     e.print(p.lineno(0))
     raise
@@ -184,12 +195,11 @@ def p_alias(p):
 
 def p_struct(p):
   '''struct : STRUCT struct_id optional_struct_interfaces NEW_LINE np_insert_struct INDENT struct_member more_struct_members DEDENT'''
-  pass
+    struct_builder.reset()
 
 def p_struct_error(p):
   '''struct : STRUCT struct_id COLON error'''
-  # Prevents looping on struct error
-  pass
+  struct_builder.reset()
 
 def p_struct_id(p):
   '''struct_id : ID'''
@@ -198,7 +208,11 @@ def p_struct_id(p):
 def p_optional_struct_interfaces(p):
   '''optional_struct_interfaces : COLON more_interfaces interface_id
                                 | empty'''
-  pass
+  if len(p) > 2:
+      vtable_t = greaser.find_struct('vtable')
+      var_builder.add_type(GreaseType(GreaseTypeClass.Pointer, vtable_t))
+      vtable = var_builder.build()
+      struct_builder.add_member('vtable', vtable)
 
 def p_interface_id(p):
   '''interface_id : ID'''
@@ -219,7 +233,7 @@ def p_np_insert_struct(p):
   try:
     name, s = struct_builder.build()
     greaser.add_struct(name, s)
-    struct_builder.reset()
+    global current_struct = s
   except GreaseError as e:
     e.print(p.lineno(2))
     raise
@@ -228,7 +242,7 @@ def p_struct_member(p):
   '''struct_member : ID COLON basic_type NEW_LINE'''
   try:
     var_builder.add_type(p[3])
-    struct_builder.add_member(p[1], var_builder.build())
+    current_struct.add_variable(p[1], var_builder.build())
     var_builder.reset()
   except GreaseError as e:
     e.print(p.lineno(1))
@@ -252,7 +266,21 @@ def p_interface_error(p):
   pass
 
 def p_interface_function(p):
-  '''interface_function : FN ID OPEN_PAREN optional_params CLOSE_PAREN optional_return_type NEW_LINE'''
+  '''interface_function : FN ID OPEN_PAREN optional_interface_fn_params CLOSE_PAREN optional_return_type NEW_LINE'''
+  pass
+
+def p_optional_interface_fn_params(p):
+  '''optional_interface_fn_params : interface_fn_param more_interface_fn_params
+                                  | empty'''
+  pass
+
+def p_interface_fn_param(p):
+  '''interface_fn_param : ID COLON basic_type'''
+  pass
+
+def p_more_interface_fn_params(p):
+  '''more_interface_fn_params : more_interface_fn_params COMMA interface_fn_param
+                              | empty'''
   pass
 
 def p_more_interface_functions(p):
@@ -288,7 +316,6 @@ def p_compound_type(p):
 def p_pointer(p):
   '''pointer : compound_type TIMES'''
   p[0] = GreaseType(GreaseTypeClass.Pointer, p[1])
-  #TODO: Signal as pointer
 
 def p_array(p):
   '''array : OPEN_BRACK basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
@@ -495,8 +522,8 @@ def p_arith_expr(p):
 
 def p_optional_arith_op(p):
   '''optional_arith_op : PLUS arith_expr
-                        | MINUS arith_expr
-                        | empty'''
+                       | MINUS arith_expr
+                       | empty'''
   quad = Quadruple()
   quad.operator = Greaser.operator_from_text(p[1])
   op_stack.push(quad)
@@ -507,8 +534,8 @@ def p_term(p):
 
 def p_optional_mult_div(p):
   '''optional_mult_div : TIMES term
-                        | DIVIDE term
-                        | empty'''
+                       | DIVIDE term
+                       | empty'''
   quad = Quadruple()
   quad.operator = Greaser.operator_from_text(p[1])
   op_stack.push(quad)
@@ -524,9 +551,9 @@ def p_optional_sign(p):
 
 def p_value(p):
   '''value : OPEN_PAREN expression CLOSE_PAREN
-            | fn_call
-            | const
-            | sub_struct np_found_variable'''
+           | fn_call
+           | const
+           | sub_struct np_found_variable'''
   ########################################
   #operand_Stack.push(v.id)
   ########################################
@@ -546,44 +573,67 @@ def p_fn_call(p):
 
 def p_optional_arguments(p):
   '''optional_arguments : expression more_arguments
-                          | empty'''
+                        | empty'''
   pass
 
 def p_more_arguments(p):
   '''more_arguments : more_arguments COMMA expression
-                      | empty'''
+                    | empty'''
   pass
 
 def p_sub_struct(p):
   '''sub_struct : optional_pointer_op sub_struct_body more_sub_struct'''
-  p[0] = [p[2]] + p[3]
+  pass
 
 def p_optional_pointer_op(p):
   '''optional_pointer_op : AMP
-                          | TIMES
-                          | empty'''
-  pass
+                         | TIMES
+                         | empty'''
+  if p[1] == '&':
+    #TODO: Change addressing to literal 
+    pass
+  elif p[i] == '*':
+    #TODO: Change adrressing to indirect
+    pass
 
 def p_sub_struct_body(p):
-    '''sub_struct_body : ID optional_sub_index'''
-    p[0] = p[1]
+  '''sub_struct_body : ID np_found_id optional_sub_index'''
+  p[0] = p[1]
+
+def p_np_found_id(p):
+  '''np_found_id : '''
+  greaser.push_id(p[-1])
 
 def p_optional_sub_index(p):
-    '''optional_sub_index : OPEN_BRACK expression more_arguments CLOSE_BRACK
+    '''optional_sub_index : OPEN_BRACK np_found_array expression more_sub_index CLOSE_BRACK
                           | empty'''
     pass
+
+def p_np_found_array(p):
+  '''np_found_array : '''
+  pass
+  #TODO: Move identifier into substruct stack
+
+def p_more_sub_index(p):
+  '''more_sub_index : more_sub_index COMMA np_next_sub_index expression
+                    | empty'''
+  pass
+
+def p_np_next_sub_index(p):
+  '''np_next_sub_index : '''
+  #TODO: Calculate subindex address
+  pass
 
 def p_more_sub_struct(p):
   '''more_sub_struct : more_sub_struct sub_struct_operator sub_struct_body
                      | empty'''
-  if len(p) == 4:
-    p[0] = p[1] + [p[3]]
-  else:
-    p[0] = []
-
+  pass
+  
 def p_sub_struct_operator(p):
   '''sub_struct_operator : DOT
-                          | ARROW'''
+                         | ARROW'''
+  #TODO: Move last id into substruct stack
+  #TODO: Calculate new address
   pass
 
 def p_main(p):

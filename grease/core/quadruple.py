@@ -3,121 +3,73 @@ from grease.core.stack import Stack
 from grease.core.type import GreaseTypeClass
 
 class Operation(Enum):
-	TIMES = 1
-	DIVIDE = 2
-	PLUS = 3 
-	MINUS = 4
-	EQ = 5
-	GT = 6
-	LT = 7 
-	GE = 8
-	LE = 9 
-	NOT = 10
-	ASSIGN = 11
-	U_MINUS = 12
-	JMP_F = 13
-	JMP = 14
-	AND = 15
-	OR = 16
-	CONST = 17
-	WHILE = 18
-	PRINT = 19
-	SCAN = 20
-	EQUALS = 21
-	IF = 22
-	ELSE = 23
-
+  TIMES = 1
+  DIVIDE = 2
+  PLUS = 3 
+  MINUS = 4
+  EQ = 5
+  GT = 6
+  LT = 7 
+  GE = 8
+  LE = 9 
+  NOT = 10
+  ASSIGN = 11
+  U_MINUS = 12
+  JMP_F = 13
+  JMP = 14
+  AND = 15
+  OR = 16
+  PRINT = 17
+  SCAN = 18
+  HALT = 19
+  RETURN = 20
+  ERA = 21
+  PARAM = 22
+  GOSUB = 23
+  ADDR = 24
 
 class Quadruple(object):
-	def __init__(self):
-		self.address = -1 # auto_incremented
-		self.operator = None
-		self.left_operand = None
-		self.right_operand = None
-		self.result = None
+  def __init__(self, operation, lhs=None, rhs=None, result=None):
+    self.operator = operation
+    self.left_operand = lhs
+    self.right_operand = rhs
+    self.result = result
 
-	def build(self, operator, left_operand, right_operand, result):
-		self.operator = operator
-		self.left_operand = left_operand
-		self.right_operand = right_operand
-		self.result = result
+  def to_list(self):
+    op = Operation(self.operator).value
+    return [op, self.left_operand, self.right_operand, self.result]
 
-	def get_list(self):
-		op = Operation(self.operator).value
-		return [op, self.left_operand, self.right_operand, self.result]
+class QuadrupleStore:
+  def __init__(self):
+    self.quads = []
+    self.next_free_quad = 0
 
-class Quadruples(object):
-	# Class variables
-	quad_list = []
-	jump_stack = Stack()
-	op_Stack = Stack()
-	next_free_quad = 0
-	op_next_free_quad = 0
-	__shared_state_op = {}
-	__shared_state = {}
-	def __init__(self):
-		self.__dict__ = self.__shared_state
+  def push_quad(self, quad):
+    quad.address = self.next_free_quad
+    self.quad_list.append(quad)
+    self.next_free_quad = len(self.quads)
+          
+  def pop_quad(self):
+    self.next_free_quad = len(self.quads) - 1
+    return self.quads.pop()
 
-	#Op Methods
-	@classmethod
-	def push_op(self, op):
-		op.address = self.next_free_quad
-		self.op_Stack.push(op)
-		self.next_free_quad = self.op_Stack.size
+  def fill_quad(self, quad_id, value):
+    self.quads[quad_id].result = value
 
-	@classmethod
-	def pop_op(self):
-		self.next_free_quad = self.op_Stack.size - 1
-		return self.op_Stack.pop()
-
-	# Quad Methods
-	@classmethod
-	def push_quad(cls, quad):
-		quad.address = cls.next_free_quad
-		cls.quad_list.append(quad)
-		cls.next_free_quad = len(cls.quad_list)
-		
-	@classmethod
-	def pop_quad(cls):
-		cls.next_free_quad = len(cls.quad_list) - 1
-		return cls.quad_list.pop()
-
-	@classmethod
-	def fill_missing_quad(cls, quad_id, value):
-		cls.quad_list[quad_id].result = value
-
-	# Jump Stack Methods
-	@classmethod
-	def push_jump(cls, offset):
-		cls.jump_stack.push(cls.next_free_quad + offset)
-
-	@classmethod
-	def pop_jump(cls):
-		return cls.jump_stack.pop()
-		
-	@classmethod
-	def peek_jump(cls):
-		return cls.jump_stack.peek()
-
-	@classmethod
-	def print_jump_stack(cls):
-		cls.jump_stack.pprint()
-
-	@classmethod
-	def print_all(cls):
-		"""prints all quadruples from list """
-		count = 0
-		print("Quads ===============================")
-		#Traer lista de cuadruplos
-		l = [x.get_list() for x in cls.quad_list]
-		#mientras el elemento(cuadruplo) este en la lista
-		for e in l:
-			print(str(count), end=':\t')
-			#por cada single element en el elemento (cuadruplo)
-			for se in e:
-				if not se == None:
-					print(str(se), end='')
-				print(end='\t')
-			count += 1
-			print()
-		pass
+  def print_all(self):
+    """prints all quadruples from list """
+    count = 0
+    print("Quads ===============================")
+    #Traer lista de cuadruplos
+    l = [x.get_list() for x in self.quads]
+    #mientras el elemento(cuadruplo) este en la lista
+    for e in l:
+      print(str(count), end=':\t')
+      #por cada single element en el elemento (cuadruplo)
+      for se in e:
+        if not se == None:
+          print(str(se), end='')
+        print(end='\t')
+      count += 1
+      print()
+    pass
