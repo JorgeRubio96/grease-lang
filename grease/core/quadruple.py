@@ -23,9 +23,8 @@ class Operation(Enum):
 	WHILE = 18
 	PRINT = 19
 	SCAN = 20
-	EQUALS = 21
-	IF = 22
-	ELSE = 23
+	IF = 21
+	ELSE = 22
 
 
 class Quadruple(object):
