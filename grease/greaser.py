@@ -38,8 +38,7 @@ operators_dict = {
   'AND' : Operation.AND,
   'OR' : Operation.OR,
   'PRINT' : Operation.PRINT,
-  'SCAN' : Operation.SCAN,
-  'EQUALS' : Operation.EQUALS,
+  'SCAN' : Operation.SCAN
 }
 
 class Greaser:
@@ -128,13 +127,7 @@ class Greaser:
 
 ########################################################
   # Helper Functions for quadruples
-  #Create quad
-  @staticmethod
-  def build_and_push_quad(op, l_op, r_op, res):
-    tmp_quad = Quadruple()
-    tmp_quad.build(op, l_op, r_op, res)
-    Quadruples.push_quad(tmp_quad)
-
+  
   #Exp quad helper
   def exp_quad_helper(self, p, op_list):
     """Exp quad helper:

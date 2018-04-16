@@ -46,11 +46,11 @@ class QuadrupleStore:
 
   def push_quad(self, quad):
     quad.address = self.next_free_quad
-    self.quad_list.append(quad)
-    self.next_free_quad = len(self.quads)
+    self.quads.append(quad)
+    self.next_free_quad += 1
           
   def pop_quad(self):
-    self.next_free_quad = len(self.quads) - 1
+    self.next_free_quad -= 1
     return self.quads.pop()
 
   def fill_quad(self, quad_id, value):

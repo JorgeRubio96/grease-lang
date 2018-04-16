@@ -34,12 +34,12 @@
 #define OR       16
 #define PRINT    17
 #define SCAN     18
-#define HALT 	 19
+#define HALT     19
 #define RETURN 	 20
-#define ERA		 21
+#define ERA      21
 #define PARAM    22
-#define GOSUB	 23
-#define ADDR	 24 //recibe direccion relativa, regresa direccion absoluta
+#define GOSUB    23
+#define ADDR     24 //recibe direccion relativa, regresa direccion absoluta
 
 
 /* program counter */
@@ -829,27 +829,34 @@ void return_( void ){
 	uint64_t rhs = (reg2 & CONTENT);
 	switch(reg1 & TYPE) {
 	case INT:
-		return ((int) lhs);
+		mem[return_reg] = ((int) lhs);
 		break;
 	case FLOAT:
-		return ((float) lhs);
+		mem[return_reg] = ((float) lhs);
 		break;
 	case CHAR:
-		return ((char) lhs);
+		mem[return_reg] = ((char) lhs);
 		break;
 	case BOOL:
-		return ((bool) lhs);
+		mem[return_reg] = ((bool) lhs);
 		break;
 	default:
 		// Err
 	}
+
+  pc = mem[sp - 2]; // Location of return addr
+  sp = mem[sp - 1];     // Location of FramePointer
 }
 
 void era( void ){
 	uint64_t lhs = (reg1 & CONTENT);
+  uint64_t fp = sp;                 // Save last sp
+  sp += lhs;
+  mem[sp - 1] = fp;
 }
 
-void param( void ){
+void param( void )
+{
 	uint64_t lhs = (reg1 & CONTENT);
 	switch(reg1 & TYPE){
 		case INT:
@@ -865,9 +872,10 @@ void param( void ){
 	}
 }
 
-void gosub( void ){
-	uint64_t lhs = (reg1 & CONTENT);
-
+void gosub( void )
+{
+  mem[sp - 2] = pc + 1;      // Return addr
+	pc = (reg1 & CONTENT);     // JMP to subroutine
 }
 	
 
@@ -924,9 +932,6 @@ void eval()
     case OR:
       or();
       break;
-    case CONST:
-      const_();
-      break;
     case PRINT:
       print_();
       break;
@@ -945,7 +950,7 @@ void eval()
     case PARAM:
       param();
       break;
-    case GOSUM:
+    case GOSUB:
       gosub();
       break;
     default:

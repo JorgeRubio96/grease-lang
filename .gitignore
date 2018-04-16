@@ -107,3 +107,4 @@ parsetab.py
 
 #Vim config
 .vimrc
+*.swp

@@ -18,12 +18,10 @@ greaser = Greaser()
 operator_stack = Stack()
 operand_stack = Stack()
 type_stack = Stack()
+jump_stack = Stack()
 agregate_stack = Stack()
 
 current_struct = None
-
-next_global_address = 0
-next_local_address = 0
 
 quads = QuadrupleStore()
 
@@ -45,8 +43,8 @@ def p_program(p):
 def p_np_jump_to_main(p):
   '''np_jump_to_main : '''
   # Agregar primer cuadruplo salto a main
-  Quadruples.jump_stack.push(Quadruples.next_free_quad)
-  Greaser.build_and_push_quad(Operation.JMP, None, None, None)
+  jump_stack.push(quads.next_free_quad)
+  quads.push_quad(Quadruple(Operation.JMP))
 
 # Permite tener 0 o mas import statements
 # Left recursive
@@ -94,7 +92,6 @@ def p_declaration(p):
 def p_variable(p):
   '''variable : VAR ID variable_body NEW_LINE'''
   try:
-    var_builder.add_address(next_local_id)
     v = var_builder.build()
     greaser.add_variable(p[2], v)
     var_builder.reset()
@@ -195,7 +192,7 @@ def p_alias(p):
 
 def p_struct(p):
   '''struct : STRUCT struct_id optional_struct_interfaces NEW_LINE np_insert_struct INDENT struct_member more_struct_members DEDENT'''
-    struct_builder.reset()
+  struct_builder.reset()
 
 def p_struct_error(p):
   '''struct : STRUCT struct_id COLON error'''
@@ -230,10 +227,12 @@ def p_more_interfaces(p):
 
 def p_np_insert_struct(p):
   '''np_insert_struct : '''
+  global current_struct
+  
   try:
     name, s = struct_builder.build()
     greaser.add_struct(name, s)
-    global current_struct = s
+    current_struct = s
   except GreaseError as e:
     e.print(p.lineno(2))
     raise
