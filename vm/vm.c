@@ -46,6 +46,14 @@
 unsigned int pc = 0;
 unsigned int sp = 0; //Se actualiza en gosub 
 
+/* instruction fields */
+uint64_t program[];
+uint64_t instrNum = 0;
+uint64_t reg1     = 0;
+uint64_t reg2     = 0;
+uint64_t reg3     = 0;
+uint64_t * mem;
+
 /* fetch the next code from the program */
 void fetch()
 {
@@ -54,13 +62,6 @@ void fetch()
   	reg2 = decode(program[ pc++ ]);
   	reg3 = decode(program[ pc++ ]);
 }
-
-/* instruction fields */
-uint64_t instrNum = 0;
-uint64_t reg1     = 0;
-uint64_t reg2     = 0;
-uint64_t reg3     = 0;
-uint64_t * mem;
 
 /* decode a code */
 uint64_t decode( uint64_t code )
@@ -76,7 +77,7 @@ uint64_t decode( uint64_t code )
 	case RELATIVE:
 		return mem[sp + ( code & CONTENT)];
 	default:
-	 	// Err
+	 	printf("Error! in decode");
 	}
 }
 
@@ -98,7 +99,7 @@ void times( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs * (float) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in TIMES");
 		}
 		break;
 	case FLOAT:
@@ -110,11 +111,11 @@ void times( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs * (float) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in TIMES");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in TIMES");
 	}
 }
 
@@ -131,7 +132,7 @@ void divide( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs / (float) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in DIVIDE");
 		}
 		break;
 	case FLOAT:
@@ -143,11 +144,11 @@ void divide( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs / (float) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in DIVIDE");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in DIVIDE");
 	}
 }
 
@@ -164,7 +165,7 @@ void add( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs + (float) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in ADD");
 		}
 		break;
 	case FLOAT:
@@ -176,11 +177,11 @@ void add( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs + (float) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in ADD");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in ADD");	
 	}
 }
 
@@ -197,7 +198,7 @@ void reduct( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs - (float) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in reduct");
 		}
 		break;
 	case FLOAT:
@@ -209,11 +210,11 @@ void reduct( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs - (float) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in reduct");
 		}
 		break;
 	default:
-		// Err
+			printf("Error!! in reduct");
 	}
 }
 
@@ -236,7 +237,7 @@ void equals( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs == (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in equals");
 		}
 		break;
 	case FLOAT:
@@ -254,7 +255,7 @@ void equals( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs == (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in equals");
 		}
 		break;
 	case CHAR:
@@ -272,7 +273,7 @@ void equals( void ) {
 			mem[reg3] = (uint64_t) ((char) lhs == (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in equals");
 		}
 		break;
 	case BOOL:
@@ -290,11 +291,11 @@ void equals( void ) {
 			mem[reg3] = (uint64_t) ((bool) lhs == (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in equals");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in equals");
 	}
 }
 
@@ -317,7 +318,7 @@ void greaterThan( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs > (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in gt");
 		}
 		break;
 	case FLOAT:
@@ -335,7 +336,7 @@ void greaterThan( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs > (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in gt");
 		}
 		break;
 	case CHAR:
@@ -353,7 +354,7 @@ void greaterThan( void ) {
 			mem[reg3] = (uint64_t) ((char) lhs > (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in gt");
 		}
 		break;
 	case BOOL:
@@ -371,11 +372,11 @@ void greaterThan( void ) {
 			mem[reg3] = (uint64_t) ((bool) lhs > (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in gt");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in gt");
 	}
 }
 
@@ -398,7 +399,7 @@ void greaterEqual( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs >= (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in ge");
 		}
 		break;
 	case FLOAT:
@@ -416,7 +417,7 @@ void greaterEqual( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs >= (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in ge");
 		}
 		break;
 	case CHAR:
@@ -434,7 +435,7 @@ void greaterEqual( void ) {
 			mem[reg3] = (uint64_t) ((char) lhs >= (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in ge");
 		}
 		break;
 	case BOOL:
@@ -452,11 +453,11 @@ void greaterEqual( void ) {
 			mem[reg3] = (uint64_t) ((bool) lhs >= (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in ge");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in ge");
 	}
 }
 
@@ -479,7 +480,7 @@ void lessEqual( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs <= (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in le");
 		}
 		break;
 	case FLOAT:
@@ -497,7 +498,7 @@ void lessEqual( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs <= (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in le");
 		}
 		break;
 	case CHAR:
@@ -515,7 +516,7 @@ void lessEqual( void ) {
 			mem[reg3] = (uint64_t) ((char) lhs <= (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in le");
 		}
 		break;
 	case BOOL:
@@ -533,11 +534,11 @@ void lessEqual( void ) {
 			mem[reg3] = (uint64_t) ((bool) lhs <= (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in le");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in le");
 	}
 }
 
@@ -557,7 +558,7 @@ void not( void ) {
 		mem[reg3] = (uint64_t)((bool) !lhs);
 		break;
 	default:
-		// Err
+		printf("Error!! in not");
 	}
 }
 
@@ -577,7 +578,7 @@ void assign( void ) {
 		mem[reg3] = (uint64_t)((bool) lhs);
 		break;
 	default:
-		// Err
+		printf("Error!! in assign");
 	}
 }
 
@@ -597,7 +598,7 @@ void uMinus( void ) {
 		mem[reg3] = (uint64_t)((bool) -lhs);
 		break;
 	default:
-		// Err
+		printf("Error!! in uMinus");
 	}
 }
 
@@ -620,7 +621,7 @@ void and( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs && (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in and");
 		}
 		break;
 	case FLOAT:
@@ -638,7 +639,7 @@ void and( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs && (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in and");
 		}
 		break;
 	case CHAR:
@@ -656,7 +657,7 @@ void and( void ) {
 			mem[reg3] = (uint64_t) ((char) lhs && (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in and");
 		}
 		break;
 	case BOOL:
@@ -674,11 +675,11 @@ void and( void ) {
 			mem[reg3] = (uint64_t) ((bool) lhs && (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in and");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in and");
 	}
 }
 
@@ -701,7 +702,7 @@ void or( void ) {
 			mem[reg3] = (uint64_t) ((int) lhs || (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in or");
 		}
 		break;
 	case FLOAT:
@@ -719,7 +720,7 @@ void or( void ) {
 			mem[reg3] = (uint64_t) ((float) lhs || (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in or");
 		}
 		break;
 	case CHAR:
@@ -737,7 +738,7 @@ void or( void ) {
 			mem[reg3] = (uint64_t) ((char) lhs || (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in or");
 		}
 		break;
 	case BOOL:
@@ -755,11 +756,11 @@ void or( void ) {
 			mem[reg3] = (uint64_t) ((bool) lhs || (bool) rhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in or");
 		}
 		break;
 	default:
-		// Err
+		printf("Error!! in or");
 	}
 }
 
@@ -798,7 +799,7 @@ void print_( void ){
 			printf("%s\n", ((bool) (lhs)) ? "true" : "false");
 			break;
 		default:
-			// Err
+			printf("Error!! in print");
 	}
 }
 
@@ -807,21 +808,29 @@ void scan_( void ){
 	uint64_t rhs = (reg2 & CONTENT);
 	switch(reg1 & TYPE){
 		case INT:
-			printf("%d\n", ((int) (lhs)) );
+			scanf("%d\n", ((int) (lhs)) );
+			scanf("%" SCNu64 "\n", &lhs);
+			mem[sp] = (uint64_t) ((int) lhs); 
 			break;
 		case FLOAT:
-			printf("%f\n", ((float) (lhs)) );
+			scanf("%f\n", ((float) (lhs)) );
+			scanf("%" SCNu64 "\n", &lhs);
+			mem[sp] = (uint64_t) ((float) lhs);
 			break;
 		case CHAR:
-			printf("%c\n", ((char) (lhs)) );
+			scanf("%c\n", ((char) (lhs)) );
+			scanf("%" SCNu64 "\n", &lhs);
+			mem[sp] = (uint64_t) ((char) lhs);
 			break;
 		case BOOL:
-			printf("%s\n", ((bool) (lhs)) ? "true" : "false");
+			scanf("%s\n", ((bool) (lhs)) ? "true" : "false");
+			scanf("%" SCNu64 "\n", &lhs);
+			mem[sp] = (uint64_t) ((bool) lhs);
 			break;
 		default:
-			// Err
+			printf("Error!! in scan");
 	}
-	scanf("%" SCNu64 "\n", &lhs);
+	
 }
 
 void return_( void ){
@@ -841,7 +850,7 @@ void return_( void ){
 		mem[return_reg] = ((bool) lhs);
 		break;
 	default:
-		// Err
+			printf("Error!! in return");
 	}
 
   pc = mem[sp - 2]; // Location of return addr
@@ -850,30 +859,33 @@ void return_( void ){
 
 void era( void ){
 	uint64_t lhs = (reg1 & CONTENT);
-  uint64_t fp = sp;                 // Save last sp
-  sp += lhs;
-  mem[sp - 1] = fp;
+ 	uint64_t fp = sp;                 // Save last sp
+  	sp += lhs;
+  	mem[sp - 1] = fp;
 }
 
-void param( void )
-{
+void param( void ) {
 	uint64_t lhs = (reg1 & CONTENT);
-	switch(reg1 & TYPE){
-		case INT:
-			break;
-		case FLOAT:
-			break;
-		case CHAR:
-			break;
-		case BOOL:
-			break;
-		default:
-			// Err
+
+	switch(reg1 & TYPE) {
+	case INT:
+		mem[reg3] = (uint64_t) ((int) lhs);
+		break;
+	case FLOAT:
+		mem[reg3] = (uint64_t) ((float) lhs);
+		break;
+	case CHAR:
+		mem[reg3] = (uint64_t) ((char) lhs);
+		break;
+	case BOOL:
+		mem[reg3] = (uint64_t)((bool) lhs);
+		break;
+	default:
+			printf("Error!! in param");
 	}
 }
 
-void gosub( void )
-{
+void gosub( void ){
   mem[sp - 2] = pc + 1;      // Return addr
 	pc = (reg1 & CONTENT);     // JMP to subroutine
 }
