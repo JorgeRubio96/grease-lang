@@ -1,8 +1,11 @@
 /*
 	Virtual machine for grease-lang
 */
-#import "stdio.h"
-#import "stdlib.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "stdint.h"
+#include "stdbool.h"
+
 /* defines */
 #define DIRECT   0x0000000000000000
 #define INDIRECT 0x1000000000000000
@@ -48,20 +51,12 @@ unsigned int sp = 0; //Se actualiza en gosub
 
 /* instruction fields */
 uint64_t program[];
-uint64_t instrNum = 0;
-uint64_t reg1     = 0;
-uint64_t reg2     = 0;
-uint64_t reg3     = 0;
+uint64_t instrNum   = 0;
+uint64_t reg1       = 0;
+uint64_t reg2       = 0;
+uint64_t reg3       = 0;
+uint64_t return_reg = 0;
 uint64_t * mem;
-
-/* fetch the next code from the program */
-void fetch()
-{
-  	instrNum = program[ pc++ ];
-  	reg1 = decode(program[ pc++ ]);
-  	reg2 = decode(program[ pc++ ]);
-  	reg3 = decode(program[ pc++ ]);
-}
 
 /* decode a code */
 uint64_t decode( uint64_t code )
@@ -79,6 +74,15 @@ uint64_t decode( uint64_t code )
 	default:
 	 	printf("Error! in decode");
 	}
+}
+
+/* fetch the next code from the program */
+void fetch()
+{
+  	instrNum = program[ pc++ ];
+  	reg1 = decode(program[ pc++ ]);
+  	reg2 = decode(program[ pc++ ]);
+  	reg3 = decode(program[ pc++ ]);
 }
 
 /* the VM runs until this flag becomes 0 */
@@ -783,7 +787,6 @@ void halt( void ) {
 
 void print_( void ){
 	uint64_t lhs = (reg1 & CONTENT);
-	uint64_t rhs = (reg2 & CONTENT);
 	printf("Grease Output:\n");
 	switch(reg1 & TYPE){
 		case INT:
@@ -805,27 +808,22 @@ void print_( void ){
 
 void scan_( void ){
 	uint64_t lhs = (reg1 & CONTENT);
-	uint64_t rhs = (reg2 & CONTENT);
 	switch(reg1 & TYPE){
 		case INT:
-			scanf("%d\n", ((int) (lhs)) );
-			scanf("%" SCNu64 "\n", &lhs);
-			mem[sp] = (uint64_t) ((int) lhs); 
+			scanf("%d\n", (int *) &lhs);
+			mem[sp] = lhs; 
 			break;
 		case FLOAT:
-			scanf("%f\n", ((float) (lhs)) );
-			scanf("%" SCNu64 "\n", &lhs);
-			mem[sp] = (uint64_t) ((float) lhs);
+			scanf("%f\n", (float *) &lhs);
+			mem[sp] = lhs;
 			break;
 		case CHAR:
-			scanf("%c\n", ((char) (lhs)) );
-			scanf("%" SCNu64 "\n", &lhs);
-			mem[sp] = (uint64_t) ((char) lhs);
+			scanf("%c\n", (char *) &lhs);
+			mem[sp] = lhs;
 			break;
 		case BOOL:
-			scanf("%s\n", ((bool) (lhs)) ? "true" : "false");
-			scanf("%" SCNu64 "\n", &lhs);
-			mem[sp] = (uint64_t) ((bool) lhs);
+			scanf("%d\n", (int *) &lhs);
+			mem[sp] = lhs;
 			break;
 		default:
 			printf("Error!! in scan");
@@ -835,7 +833,6 @@ void scan_( void ){
 
 void return_( void ){
 	uint64_t lhs = (reg1 & CONTENT);
-	uint64_t rhs = (reg2 & CONTENT);
 	switch(reg1 & TYPE) {
 	case INT:
 		mem[return_reg] = ((int) lhs);
@@ -1010,6 +1007,7 @@ int main( int argc, const char * argv[] )
 	}
 
 	mem = malloc(maxmem);
+  return_reg = fileLen-3;
 	fread(mem, fileLen-4, 1, fileExec);
 	// running
 	run();
