@@ -15,3 +15,13 @@ class GreaseType:
         self.type_class = type_class
         self.type_data = type_data
         self.dimens = dimens
+    
+    def __repr__(self):
+        if self.type_class is GreaseTypeClass.Array:
+            return '[{}, {}]'.format(self.type_data, self.dimens)
+        elif self.type_class is GreaseTypeClass.Pointer:
+            return '* {}'.format(self.type_data)
+        elif self.type_class is GreaseTypeClass.Struct:
+            return 'Object({})'.format(self.type_data)
+        
+        return '{}'.format(self.type_class)

@@ -15,19 +15,11 @@ from grease.core.substruct import SubstrctBuilder
 greaser = Greaser()
 
 #Quads global structures
-operator_stack = Stack()
-operand_stack = Stack()
-type_stack = Stack()
-jump_stack = Stack()
-agregate_stack = Stack()
-
-current_struct = None
-
-quads = QuadrupleStore()
 
 struct_builder = GreaseStructBuilder()
 var_builder = GreaseVarBuilder()
 fn_builder = GreaseFnBuilder()
+current_struct = None
 
 precedence = (
   ('left', 'PLUS', 'MINUS'),
@@ -43,8 +35,7 @@ def p_program(p):
 def p_np_jump_to_main(p):
   '''np_jump_to_main : '''
   # Agregar primer cuadruplo salto a main
-  jump_stack.push(quads.next_free_quad)
-  quads.push_quad(Quadruple(Operation.JMP))
+  greaser.make_jump()
 
 # Permite tener 0 o mas import statements
 # Left recursive
@@ -341,8 +332,12 @@ def p_block_body(p):
 
 def p_block_line(p):
   '''block_line : statement
-                | variable'''
+                | variable np_local_variable'''
   pass
+
+def p_np_local_variable(p):
+  '''np_local_variable : '''
+  print('Local variable!')
 
 def p_statement(p):
   '''statement : statement_body'''
@@ -474,9 +469,7 @@ def p_np_check_negation(p):
 def p_optional_not(p):
   '''optional_not : NOT
                   | empty'''
-  quad = Quadruple()
-  quad.operator = Operation.NOT
-  op_stack.push(quad)
+  greaser.push_operator(Operation.NOT)
 
 def p_rel_expr(p):
   '''rel_expr : arith_expr np_check_comparison optional_comparison'''
@@ -485,25 +478,23 @@ def p_rel_expr(p):
 def p_np_check_comparison(p):
   '''np_check_comparison : '''
   # Revisar si hay un Comparison operator en el tope de la pila de operadores
-  # if op_stack.isEmpty():
-  #   pass
-  # else :
-  #   l = []
-  #   i = 1
-  #   while i <= len(Operation):
-  #     if Operation(i).value == Operation.value or Operation(i).value == Operation.value or :
-  #       l.append(Operation(i).value)
-  #       i += 1
-  #   if op_stack.peek() in l:
-  #     greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
-  #     op_stack.pop()
+  if op_stack.peek() in [Operation.GE, Operation.LE, Operation.GT, Operation.LT, Operation.EQ]:
+    op = operator_stack.pop()
+    rhs = operand_stack.pop()
+    lhs = operand_stack.pop()
+
+    res_type = cube.check(lhs, op, rhs)
+
+    if res_type is None:
+        raise TypeMismatch('{} {} {}'.format(lhs.type, op, rhs.type))
+
+    #tmp = GreaseVar(Grease
+
 
 def p_optional_comparison(p):
   '''optional_comparison : optional_not comparison_operator rel_expr
                          | empty'''
-  quad = Quadruple()
-  quad.operator = Operation.GT
-  op_stack.push(quad)
+  pass
 
 def p_comparison_operator(p):
   '''comparison_operator : EQ
@@ -511,9 +502,7 @@ def p_comparison_operator(p):
                          | LT
                          | GE
                          | LE'''
-  quad = Quadruple()
-  quad.operator = Greaser.operator_from_text(p[1])
-  op_stack.push(quad)
+  operator_stack.push(greaser.operator_from_text(p[1]))
 
 def p_arith_expr(p):
   '''arith_expr : term optional_arith_op'''
@@ -523,9 +512,8 @@ def p_optional_arith_op(p):
   '''optional_arith_op : PLUS arith_expr
                        | MINUS arith_expr
                        | empty'''
-  quad = Quadruple()
-  quad.operator = Greaser.operator_from_text(p[1])
-  op_stack.push(quad)
+  if p[1] is not None:
+    op_stack.push(greaser.operator_from_text(p[1]))
 
 def p_term(p):
   '''term : factor optional_mult_div'''
@@ -535,9 +523,8 @@ def p_optional_mult_div(p):
   '''optional_mult_div : TIMES term
                        | DIVIDE term
                        | empty'''
-  quad = Quadruple()
-  quad.operator = Greaser.operator_from_text(p[1])
-  op_stack.push(quad)
+  if p[1] is not None:
+    operator_stack.push(greaser.operator_from_text(p[1]))
 
 def p_factor(p):
   '''factor : optional_sign value'''
@@ -647,11 +634,10 @@ def p_main_error(p):
 
 def p_np_main_fill_quad(p):
   '''np_main_fill_quad : '''
-  tmp_end = Quadruples.pop_jump()
-
-  if tmp_end is not None:
-    tmp_count = Quadruples.next_free_quad
-    Quadruples.fill_missing_quad(tmp_end, tmp_count)
+  try:
+    greaser.fill_jump()
+  except GreaseError as e:
+    e.print(p.lineno)
 
 def p_const(p):
   '''const : CONST_INT

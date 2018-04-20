@@ -11,7 +11,7 @@ from grease.core.exceptions import TypeMismatch, UndefinedVariable, UndefinedFun
 from grease.core.exceptions import UndefinedMember, UndefinedType, UndefinedInterface, UndefinedStruct
 from grease.core.stack import Stack
 from grease.core.substruct import SubstructNodeType
-from grease.semantic_cube import SemanticCube
+from grease.semantic_cube import cube
 
 type_class_dict = {
   'Int': GreaseTypeClass.Int,
@@ -48,6 +48,11 @@ class Greaser:
     self._structs = StructTable()
     self._scope = self._global_vars
     self._interfaces = InterfaceTable()
+    self._operator_stack = Stack()
+    self._operand_stack = Stack()
+    self._jump_stack = Stack()
+    self._agregate_stack = Stack()
+    self._quads = QuadrupleStore()
 
   def find_function(self, name):
     fn = self._global_fns(name)
@@ -116,55 +121,67 @@ class Greaser:
   def close_scope(self):
     self._scope = self._scope.parent
 
-  @staticmethod
-  def basic_type_from_text(name):
-    return GreaseType(type_class_dict.get(name))
+  def push_operator(self, operator):
+    self._operator_stack.push(operator)
 
-  @staticmethod
-  def operator_from_text(text):
-    return operators_dict.get(text)
+  def check_top_operator(self, operators):
+    if self._operator_stack.peek() in operators:
+      self.make_expression()
 
-
-########################################################
-  # Helper Functions for quadruples
   
+  def push_operand(self, operand):
+    self._operand_stack.push(operand)
+
+  def push_agregate_stack(self):
+    self._agregate_stack.push(self._operand_stack.pop())
+    pass
+  
+  def make_jump(self, to=None):
+    if to is None:
+      self._jump_stack.push(self._quads.next_free_quad)
+    
+    quad = Quadruple(Operation.JMP, lhs=to)
+  
+  def make_jump_f(self, to=None):
+    if to is None:
+      self._jump_stack.push(self._quads.next_free_quad)
+    
+    quad = Quadruple(Operation.JMP_F, lhs=to)
+
+  def fill_jump(self):
+    quad_no = self.jump_stack.pop()
+
+    if quad_no is not None:
+      next_quad = self.quads.next_free_quad
+      quads.fill_missing_quad(quad_no, next_quad)
+    else:
+      raise GreaseError('No jumps pending to be resolved')
+
   #Exp quad helper
-  def exp_quad_helper(self, p, op_list):
+  def make_expression(self):
     """Exp quad helper:
     Pops 2 operands from typestack and operand stack, checks type and calls build_and_push_quad"""
-    if self._operator_stack.isEmpty():
-      return
-    op = self._operator_stack.peek()
-    id_op = p.Operation(op).value
-    if id_op in op_list:
-      t1 = self._type_stack.pop()
-      t2 = self._type_stack.pop()
-      return_type = SemanticCube.cube[op][t1][t2]
-    if return_type == -1:
-      raise TypeMismatch('')
-    o1 = self._operand_stack.pop()
-    o2 = self._operand_stack.pop()
-    tmp_var_id = self._semantic_info.get_next_var_address(return_type)
+    op = self._operator_stack.pop()
+    
+    t2 = self._operator_stack.pop()
+    t1 = self._operator_stack.pop()
+    
+    return_type_class = cube.check(t1, op, t2)
+    
+    if return_type_class is None:
+      raise TypeMismatch('{} {} {}'.format(t1, op, t2))
+
+    tmp_type = GreaseType(return_type_class)
+    tmp_var = GreaseVar(tmp_type, addr)
 
     # Generate Quadruple and push it to the list
-    Greaser.build_and_push_quad(op, o2, o1, tmp_var_id)
-    self._operator_stack.pop()
+    quad = Quadruple(op, lhs, rhs, tmp_var)
+    self._quads.push_quad(quad)
 
-    # push the tmp_var_id and the return type to stack
-    self._operand_stack.push(tmp_var_id)
-    self._type_stack.push(return_type)
-
-    print("\n> PUSHING OPERATOR '{}' -> op2 = {}, op1 = {}, res = {}".format(str_op, o2, o1, tmp_var_id))
-    self.print_stacks()
-
-  def push_const_operand_and_type(self, operand, type):
-    '''Builds the constant quadruple for operands and type'''
-    self._type_stack.push(type_class_dict[type])
-    if operand in operators_dict.keys():
-      self._operand_stack.push(operators_dict[operand])
-    return
-
-  def assign_quad_helper(self, p):
+    # push the tmp_var to stack
+    self._operand_stack.push(tmp_var)
+  
+  def make_assign(self, lhs):
     t1 = self._type_stack.pop()
     t2 = self._type_stack.pop()
     if t1 != t2:
@@ -188,7 +205,11 @@ class Greaser:
     print("> Operator Stack = ")
     self._operator_stack.pprint()
 
-    print("> Type Stack = ")
-    self._type_stack.pprint()
+  @staticmethod
+  def basic_type_from_text(name):
+    return GreaseType(type_class_dict.get(name))
 
-########################################################
+  @staticmethod
+  def operator_from_text(text):
+    return operators_dict.get(text)
+
