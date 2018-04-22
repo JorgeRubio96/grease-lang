@@ -7,7 +7,7 @@ class GreaseVar:
         return self.type.type_class is type_class
 
     def __repr__(self):
-        return '{}: {}'.format(self.address, self.type)
+        return '{}: {}'.format(format(self.address, '#018x'), self.type)
 
 class GreaseVarBuilder:
     def __init__(self):

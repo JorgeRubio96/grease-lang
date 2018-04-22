@@ -27,7 +27,6 @@ reserved = {
     'eq': 'EQ',
     'not':'NOT',
     'from': 'FROM',
-    'main': 'MAIN',
     'return': 'RETURN',
     'true': 'TRUE',
     'false': 'FALSE'

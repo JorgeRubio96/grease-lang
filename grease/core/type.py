@@ -11,11 +11,12 @@ class GreaseTypeClass(Enum):
     Interface = 8
 
 class GreaseType:
-    def __init__(self, type_class, type_data=None, dimens=None):
+    def __init__(self, type_class, type_data=None, dimens=None, size=1):
         self.type_class = type_class
         self.type_data = type_data
         self.dimens = dimens
-    
+        self.size = size
+        
     def __repr__(self):
         if self.type_class is GreaseTypeClass.Array:
             return '[{}, {}]'.format(self.type_data, self.dimens)

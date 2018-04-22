@@ -8,6 +8,7 @@ class GreaseFn:
         self.return_data = return_data
         self._variables = None
         self.size = 0
+        self.start = 0
 
     def open_scope(self, global_vars=None):
         self._variables = VariableTable(global_vars)

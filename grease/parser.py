@@ -6,7 +6,7 @@ from grease.core.variable import GreaseVarBuilder
 from grease.core.function import GreaseFnBuilder
 from grease.core.struct import GreaseStructBuilder, GreaseStruct
 from grease.core.interface import GreaseInterface
-from grease.core.exceptions import GreaseError
+from grease.core.exceptions import GreaseError, UndefinedFunction
 from grease.core.quadruple import QuadrupleStore, Quadruple, Operation
 from grease.core.stack import Stack
 from grease.core.type import GreaseType, GreaseTypeClass
@@ -29,8 +29,17 @@ precedence = (
 )
 
 def p_program(p):
-  '''program : np_jump_to_main optional_imports optional_declarations main'''
-  Quadruples.print_all()
+  '''program : np_jump_to_main optional_imports optional_declarations'''
+  try:
+    greaser.resolve_main()
+  except UndefinedFunction as e:
+    print('Main is not defined')
+  except GreaseError as e:
+    e.print(p.lineno(3))
+  
+  # Debug print
+  # TODO: Remove before release
+  greaser._quads.print_all()
 
 def p_np_jump_to_main(p):
   '''np_jump_to_main : '''
@@ -113,6 +122,7 @@ def p_function(p):
   '''function : FN optional_method_declaration function_id OPEN_PAREN optional_params CLOSE_PAREN optional_return_type np_insert_function NEW_LINE block'''
   # Close the function scope
   greaser.close_scope()
+  greaser.reset_local_address()
 
 def p_function_id(p):
   '''function_id : ID'''
@@ -332,12 +342,8 @@ def p_block_body(p):
 
 def p_block_line(p):
   '''block_line : statement
-                | variable np_local_variable'''
+                | variable'''
   pass
-
-def p_np_local_variable(p):
-  '''np_local_variable : '''
-  print('Local variable!')
 
 def p_statement(p):
   '''statement : statement_body'''
@@ -387,29 +393,13 @@ def p_expression(p):
 
 def p_np_check_or(p):
   '''np_check_or : '''
-  # Revisar si hay un OR en el tope de la pila de operadores
-  # if op_stack.isEmpty():
-  #   pass
-  # else :
-  #   if op_stack.peek() == 'OR':
-  #     l = []
-  #     i = 1
-  #     while i <= len(Operation):
-  #       if Operation(i).value == Operation.AND.value or Operation(i).value == Operation.OR.value :
-  #         l.append(Operation(i).value)
-  #         i += 1
-  #     greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
-  #     op_stack.pop()
-  #   else :
-  #     pass
+  greaser.check_top_operator([Operation.OR])
 
 def p_optional_or(p):
   '''optional_or : OR expression
                  | empty'''
   if len(p) > 2:
-    quad = Quadruple()
-    quad.operator = Operation.OR
-    op_stack.push(quad)
+    greaser.push_operator(Operation.OR)
 
 def p_logic_expr(p):
   '''logic_expr : negation np_check_and optional_and'''
@@ -420,21 +410,7 @@ def p_logic_expr(p):
 
 def p_np_check_and(p):
   '''np_check_and : '''
-  # Revisar si hay un AND en el tope de la pila de operadores
-  # if op_stack.isEmpty():
-  #   pass
-  # else :
-  #   if op_stack.peek() == 'AND':
-  #     l = []
-  #     i = 1
-  #     while i <= len(Operation):
-  #       if Operation(i).value == Operation.AND.value or Operation(i).value == Operation.OR.value :
-  #         l.append(Operation(i).value)
-  #         i += 1
-  #     greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
-  #     op_stack.pop()
-  #   else :
-  #     pass
+  greaser.check_top_operator([Operation.AND])
 
 def p_optional_and(p):
   '''optional_and : AND logic_expr
@@ -478,18 +454,7 @@ def p_rel_expr(p):
 def p_np_check_comparison(p):
   '''np_check_comparison : '''
   # Revisar si hay un Comparison operator en el tope de la pila de operadores
-  if op_stack.peek() in [Operation.GE, Operation.LE, Operation.GT, Operation.LT, Operation.EQ]:
-    op = operator_stack.pop()
-    rhs = operand_stack.pop()
-    lhs = operand_stack.pop()
-
-    res_type = cube.check(lhs, op, rhs)
-
-    if res_type is None:
-        raise TypeMismatch('{} {} {}'.format(lhs.type, op, rhs.type))
-
-    #tmp = GreaseVar(Grease
-
+  greaser.check_top_operator([Operation.GT, Operation.LT, Operation.EQ, Operation.GE, Operation.LE])
 
 def p_optional_comparison(p):
   '''optional_comparison : optional_not comparison_operator rel_expr
@@ -513,7 +478,8 @@ def p_optional_arith_op(p):
                        | MINUS arith_expr
                        | empty'''
   if p[1] is not None:
-    op_stack.push(greaser.operator_from_text(p[1]))
+    operator = greaser.operator_from_text(p[1])
+    greaser.push_operator(operator)
 
 def p_term(p):
   '''term : factor optional_mult_div'''
@@ -576,9 +542,9 @@ def p_optional_pointer_op(p):
                          | TIMES
                          | empty'''
   if p[1] == '&':
-    #TODO: Change addressing to literal 
+    #TODO: Push addr quad 
     pass
-  elif p[i] == '*':
+  elif p[1] == '*':
     #TODO: Change adrressing to indirect
     pass
 
@@ -588,7 +554,11 @@ def p_sub_struct_body(p):
 
 def p_np_found_id(p):
   '''np_found_id : '''
-  greaser.push_id(p[-1])
+  try:
+    var = greaser.find_variable(p[-1])
+    greaser.push_operand(var)
+  except GreaseError as e:
+    e.print(p.lineno(-1))
 
 def p_optional_sub_index(p):
     '''optional_sub_index : OPEN_BRACK np_found_array expression more_sub_index CLOSE_BRACK
@@ -597,8 +567,7 @@ def p_optional_sub_index(p):
 
 def p_np_found_array(p):
   '''np_found_array : '''
-  pass
-  #TODO: Move identifier into substruct stack
+  greaser.push_agregate_stack()
 
 def p_more_sub_index(p):
   '''more_sub_index : more_sub_index COMMA np_next_sub_index expression
@@ -622,30 +591,13 @@ def p_sub_struct_operator(p):
   #TODO: Calculate new address
   pass
 
-def p_main(p):
-  '''main : FN MAIN np_main_fill_quad OPEN_PAREN CLOSE_PAREN COLON INT NEW_LINE block'''
-  # greaser.build_and_push_quad(Operation.END, None, None, None)
-
-def p_main_error(p):
-  '''main : FN MAIN error'''
-  # Consume parse error to continue reporting additional errors
-  # Clear the list of quadruples. Nothing to compile.
-  Quadruples.quad_list.clear()
-
-def p_np_main_fill_quad(p):
-  '''np_main_fill_quad : '''
-  try:
-    greaser.fill_jump()
-  except GreaseError as e:
-    e.print(p.lineno)
-
 def p_const(p):
   '''const : CONST_INT
-          | CONST_CHAR
-          | CONST_STR
-          | CONST_REAL
-          | TRUE
-          | FALSE'''
+           | CONST_CHAR
+           | CONST_STR
+           | CONST_REAL
+           | TRUE
+           | FALSE'''
   p[0] = p[1]
 
 def p_empty(p):

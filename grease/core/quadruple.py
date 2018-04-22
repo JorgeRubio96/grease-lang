@@ -53,23 +53,24 @@ class QuadrupleStore:
     self.next_free_quad -= 1
     return self._quads.pop()
 
-  def fill_quad(self, quad_id, value):
-    self._quads[quad_id].result = value
+  def fill_quad(self, quad_no, value):
+    self._quads[quad_no].result = value
 
   def print_all(self):
     """prints all quadruples from list """
     count = 0
     print("Quads ===============================")
     #Traer lista de cuadruplos
-    l = [x.get_list() for x in self._quads]
+    l = [x.to_list() for x in self._quads]
     #mientras el elemento(cuadruplo) este en la lista
     for e in l:
-      print(str(count), end=':\t')
+      print(str(count), end=':  ')
       #por cada single element en el elemento (cuadruplo)
       for se in e:
         if not se == None:
-          print(str(se), end='')
-        print(end='\t')
+          print(format(se, '#018x'), end='  ')
+        else:
+          print('                  ', end='  ')
       count += 1
       print()
     pass

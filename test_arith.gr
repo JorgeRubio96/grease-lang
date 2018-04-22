@@ -1,4 +1,4 @@
-main() : Int
+fn main() : Int
   var a : Int
   var b = 2
   

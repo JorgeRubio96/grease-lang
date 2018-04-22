@@ -53,12 +53,14 @@ class Greaser:
     self._jump_stack = Stack()
     self._agregate_stack = Stack()
     self._quads = QuadrupleStore()
+    self._next_local_address = 0x3000000000000000
+    self._next_global_address = 0x0000000000000000
 
   def find_function(self, name):
-    fn = self._global_fns(name)
+    fn = self._global_fns.find_function(name)
 
     if fn is None:
-      raise UndefinedFunction(fn_name)
+      raise UndefinedFunction(name)
     
     return fn
 
@@ -100,9 +102,17 @@ class Greaser:
     return interface
 
   def add_variable(self, name, var):
+    if self._scope is self._global_vars:
+      var.address = self._next_global_address
+      self._next_global_address += var.type.size
+    else:
+      var.address = self._next_local_address
+      self._next_local_address += var.type.size
+
     self._scope.add_variable(name,var)
 
   def add_function(self, name, fn, struct=None):
+    fn.start = self._quads.next_free_quad
     if struct is not None:
       struct.functions.add_function(name, fn)
     else:
@@ -127,7 +137,6 @@ class Greaser:
   def check_top_operator(self, operators):
     if self._operator_stack.peek() in operators:
       self.make_expression()
-
   
   def push_operand(self, operand):
     self._operand_stack.push(operand)
@@ -135,25 +144,31 @@ class Greaser:
   def push_agregate_stack(self):
     self._agregate_stack.push(self._operand_stack.pop())
     pass
-  
+
   def make_jump(self, to=None):
     if to is None:
       self._jump_stack.push(self._quads.next_free_quad)
-    
-    quad = Quadruple(Operation.JMP, lhs=to)
+      quad = Quadruple(Operation.JMP)
+    else:
+      quad = Quadruple(Operation.JMP, lhs=0X2000000000000000 + to)
+
+    self._quads.push_quad(quad)
   
   def make_jump_f(self, to=None):
     if to is None:
       self._jump_stack.push(self._quads.next_free_quad)
+      quad = Quadruple(Operation.JMP_F)
+    else:
+      quad = Quadruple(Operation.JMP_F, lhs=0X2000000000000000 + to)
     
-    quad = Quadruple(Operation.JMP_F, lhs=to)
+    self._quads.push_quad(quad)
 
   def fill_jump(self):
-    quad_no = self.jump_stack.pop()
+    quad_no = self._jump_stack.pop()
 
     if quad_no is not None:
-      next_quad = self.quads.next_free_quad
-      quads.fill_missing_quad(quad_no, next_quad)
+      next_quad = self._quads.next_free_quad
+      self._quads.fill_quad(quad_no, 0X2000000000000000 + next_quad)
     else:
       raise GreaseError('No jumps pending to be resolved')
 
@@ -194,6 +209,12 @@ class Greaser:
     #generate quad and push it to the list
     Greaser.build_and_push_quad(op, o1, None, o2)
 
+  def resolve_main(self):
+    main = self.find_function('main')
+    jump_to_main = self._jump_stack.pop()
+
+    self._quads.fill_quad(jump_to_main, 0X2000000000000000 + main.start)
+
   def print_stacks(self):
     """Print Stacks
 
@@ -204,6 +225,9 @@ class Greaser:
 
     print("> Operator Stack = ")
     self._operator_stack.pprint()
+
+  def reset_local_address(self):
+    self._next_local_address = 0x3000000000000000
 
   @staticmethod
   def basic_type_from_text(name):
