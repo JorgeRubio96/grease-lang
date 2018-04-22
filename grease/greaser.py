@@ -7,7 +7,7 @@ from grease.core.variable_table import VariableTable
 from grease.core.struct_table import StructTable
 from grease.core.interface_table import InterfaceTable
 from grease.core.function_directory import FunctionDirectory
-from grease.core.exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction
+from grease.core.exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, GreaseError
 from grease.core.exceptions import UndefinedMember, UndefinedType, UndefinedInterface, UndefinedStruct
 from grease.core.stack import Stack
 from grease.core.substruct import SubstructNodeType
@@ -21,24 +21,19 @@ type_class_dict = {
 }
 
 operators_dict = {
-  'TIMES' : Operation.TIMES,
-  'DIVIDE' : Operation.DIVIDE, 
-  'PLUS' : Operation.PLUS,
-  'MINUS' : Operation.MINUS,
-  'EQ' : Operation.EQ,
-  'GT' : Operation.GT,
-  'LT' : Operation.LT,
-  'GE' : Operation.GE,
-  'LE' : Operation.LE,
-  'NOT' : Operation.NOT,
-  'ASSIGN' : Operation.ASSIGN,
-  'U_MINUS' : Operation.U_MINUS,
-  'JMP_F' : Operation.JMP_F,
-  'JMP' : Operation.JMP,
-  'AND' : Operation.AND,
-  'OR' : Operation.OR,
-  'PRINT' : Operation.PRINT,
-  'SCAN' : Operation.SCAN
+  '*' : Operation.TIMES,
+  '/' : Operation.DIVIDE, 
+  '+' : Operation.PLUS,
+  '-' : Operation.MINUS,
+  '==' : Operation.EQ,
+  'gt' : Operation.GT,
+  'lt' : Operation.LT,
+  'ge' : Operation.GE,
+  'le' : Operation.LE,
+  'not' : Operation.NOT,
+  '=' : Operation.ASSIGN,
+  'and' : Operation.AND,
+  'or' : Operation.OR,
 }
 
 class Greaser:
@@ -178,36 +173,35 @@ class Greaser:
     Pops 2 operands from typestack and operand stack, checks type and calls build_and_push_quad"""
     op = self._operator_stack.pop()
     
-    t2 = self._operator_stack.pop()
-    t1 = self._operator_stack.pop()
+    rhs = self._operand_stack.pop()
+    lhs = self._operand_stack.pop()
     
-    return_type_class = cube.check(t1, op, t2)
+    return_type_class = cube.check(lhs, op, lhs)
     
     if return_type_class is None:
-      raise TypeMismatch('{} {} {}'.format(t1, op, t2))
+      raise TypeMismatch('{} {} {}'.format(lhs.type, op, rhs.type))
 
     tmp_type = GreaseType(return_type_class)
-    tmp_var = GreaseVar(tmp_type, addr)
+    tmp_var = GreaseVar(tmp_type, self._next_local_address)
+
+    self._next_local_address += 1
 
     # Generate Quadruple and push it to the list
-    quad = Quadruple(op, lhs, rhs, tmp_var)
+    quad = Quadruple(op, lhs.address, rhs.address, tmp_var.address)
     self._quads.push_quad(quad)
 
     # push the tmp_var to stack
     self._operand_stack.push(tmp_var)
   
   def make_assign(self, lhs):
-    t1 = self._type_stack.pop()
-    t2 = self._type_stack.pop()
-    if t1 != t2:
+    expr = self._operand_stack.pop()
+    var = self._operand_stack.pop()
+    if var.type.type_class is not expr.type.type_class:
       raise TypeMismatch('')
     op = self._operator_stack.pop()
-    o1 = self._operand_stack.pop()
-    o2 = self._operand_stack.pop()
-    print(">Second Operand {}".format(o2))
 
     #generate quad and push it to the list
-    Greaser.build_and_push_quad(op, o1, None, o2)
+    self._quads.push_quad(Quadruple(op, lhs=expr, result=var))
 
   def resolve_main(self):
     main = self.find_function('main')

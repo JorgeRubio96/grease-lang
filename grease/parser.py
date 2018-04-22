@@ -39,7 +39,7 @@ def p_program(p):
   
   # Debug print
   # TODO: Remove before release
-  greaser._quads.print_all()
+  # greaser._quads.print_all()
 
 def p_np_jump_to_main(p):
   '''np_jump_to_main : '''
@@ -393,7 +393,10 @@ def p_expression(p):
 
 def p_np_check_or(p):
   '''np_check_or : '''
-  greaser.check_top_operator([Operation.OR])
+  try:
+    greaser.check_top_operator([Operation.OR])
+  except GreaseError as e:
+    e.print(p.lineno(0))
 
 def p_optional_or(p):
   '''optional_or : OR expression
@@ -410,15 +413,16 @@ def p_logic_expr(p):
 
 def p_np_check_and(p):
   '''np_check_and : '''
-  greaser.check_top_operator([Operation.AND])
+  try:
+    greaser.check_top_operator([Operation.AND])
+  except GreaseError as e:
+    e.print(p.lineno(0))
 
 def p_optional_and(p):
   '''optional_and : AND logic_expr
                   | empty'''
-  if len(p) > 2:
-    quad = Quadruple()
-    quad.operator = Operation.AND
-    op_stack.push(quad)
+  if p[1] is not None:
+    greaser.push_operator(Operation.AND)
 
 def p_negation(p):
   '''negation : np_check_negation optional_not rel_expr'''
@@ -426,35 +430,20 @@ def p_negation(p):
 
 def p_np_check_negation(p):
   '''np_check_negation : '''
-  # Revisar si hay un NOT en el tope de la pila de operadores
-  # if op_stack.isEmpty():
-  #   pass
-  # else :
-  #   if op_stack.peek() == 'NOT':
-  #     l = []
-  #     i = 1
-  #     while i <= len(Operation):
-  #       if Operation(i).value == Operation.NOT.value:
-  #         l.append(Operation(i).value)
-  #         i += 1
-  #     greaser.exp_quad_helper(p, l,  operator_stack, type_stack, operand_stack)
-  #     op_stack.pop()
-  #   else :
-  #     pass
+  try:
+    greaser.check_top_operator([Operation.NOT])
+  except GreaseError as e:
+    e.print(p.lineno(0))
 
 def p_optional_not(p):
   '''optional_not : NOT
                   | empty'''
-  greaser.push_operator(Operation.NOT)
+  if p[1] is not None:
+    greaser.push_operator(Operation.NOT)
 
 def p_rel_expr(p):
-  '''rel_expr : arith_expr np_check_comparison optional_comparison'''
+  '''rel_expr : arith_expr optional_comparison np_check_comparison '''
   pass
-
-def p_np_check_comparison(p):
-  '''np_check_comparison : '''
-  # Revisar si hay un Comparison operator en el tope de la pila de operadores
-  greaser.check_top_operator([Operation.GT, Operation.LT, Operation.EQ, Operation.GE, Operation.LE])
 
 def p_optional_comparison(p):
   '''optional_comparison : optional_not comparison_operator rel_expr
@@ -467,10 +456,17 @@ def p_comparison_operator(p):
                          | LT
                          | GE
                          | LE'''
-  operator_stack.push(greaser.operator_from_text(p[1]))
+  greaser.push_operator(greaser.operator_from_text(p[1]))
+
+def p_np_check_comparison(p):
+  '''np_check_comparison : '''
+  try:
+    greaser.check_top_operator([Operation.EQ, Operation.GT, Operation.LT, Operation.GE, Operation.LE])
+  except GreaseError as e:
+    e.print(p.lineno(0))
 
 def p_arith_expr(p):
-  '''arith_expr : term optional_arith_op'''
+  '''arith_expr : term np_check_arith_op optional_arith_op'''
   pass
 
 def p_optional_arith_op(p):
@@ -481,38 +477,53 @@ def p_optional_arith_op(p):
     operator = greaser.operator_from_text(p[1])
     greaser.push_operator(operator)
 
+def p_np_check_arith_op(p):
+  '''np_check_arith_op : '''
+  try:
+    greaser.check_top_operator([Operation.PLUS, Operation.MINUS])
+  except GreaseError as e:
+    e.print(p.lineno(0))
+
 def p_term(p):
-  '''term : factor optional_mult_div'''
+  '''term : factor np_check_term optional_mult_div'''
   pass
+
+def p_np_check_term(p):
+  '''np_check_term : '''
+  try:
+    greaser.check_top_operator([Operation.TIMES, Operation.DIVIDE])
+  except GreaseError as e:
+    e.print(p.lineno(0))
 
 def p_optional_mult_div(p):
   '''optional_mult_div : TIMES term
                        | DIVIDE term
                        | empty'''
   if p[1] is not None:
-    operator_stack.push(greaser.operator_from_text(p[1]))
+    greaser.push_operator(greaser.operator_from_text(p[1]))
 
 def p_factor(p):
-  '''factor : optional_sign value'''
+  '''factor : optional_sign value np_check_factor'''
   pass
 
 def p_optional_sign(p):
   '''optional_sign : MINUS %prec UMINUS
                     | empty'''
-  pass
+  if p[1] is not None:
+    greaser.push_operator(Operation.U_MINUS)
 
+def p_np_check_factor(p):
+  '''np_check_factor : '''
+  try:
+    greaser.check_top_operator([Operation.U_MINUS])
+  except GreaseError as e:
+    e.print(p.lineno(0))
+  
 def p_value(p):
   '''value : OPEN_PAREN expression CLOSE_PAREN
            | fn_call
            | const
-           | sub_struct np_found_variable'''
-  ########################################
-  #operand_Stack.push(v.id)
-  ########################################
-  #type_Stack.push(v.type)
-
-def p_np_found_variable(p):
-  '''np_found_variable : '''
+           | sub_struct'''
   pass
 
 def p_fn_call(p):

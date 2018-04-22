@@ -11,9 +11,9 @@ class GreaseStruct:
         self.total_size = 0
         self.next_addr = 0
         
-        for name, varable in variables.items():
+        for name, variable in variables.items():
             variable.address = self.next_addr
-            self.variables.add_variable(name, varable)
+            self.variables.add_variable(name, variable)
             self.next_addr += 1
 
         for name, fn in functions.items():

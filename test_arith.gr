@@ -4,5 +4,5 @@ fn main() : Int
   
   scan a
 
-  print a + b
+  print a * b + b - a
   return 0
