@@ -371,14 +371,32 @@ def p_condition(p):
   '''condition : IF expression COLON NEW_LINE block optional_else'''
   pass
 
+def p_np_condition(p):
+  
+  
+
 def p_optional_else(p):
   '''optional_else : ELSE COLON NEW_LINE block
                    | empty'''
   pass
 
+def p_np_optional_else(p):
+  
+
 def p_cycle(p):
-  '''cycle : WHILE expression COLON NEW_LINE block'''
+  '''cycle : WHILE np_begin_cycle expression COLON NEW_LINE block'''
+  greaser.fill_jump()
+  greaser.make_jump()
   pass
+
+def p_np_begin_cycle(p):
+  '''np_begin_cycle : '''
+  greaser.push_jmp()
+
+def p_np_cycle(p):
+  greaser.make_jump_f()
+  
+
 
 def p_print(p):
   '''print : PRINT expression'''

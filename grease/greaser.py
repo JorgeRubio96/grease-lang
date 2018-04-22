@@ -145,18 +145,23 @@ class Greaser:
       self._jump_stack.push(self._quads.next_free_quad)
       quad = Quadruple(Operation.JMP)
     else:
-      quad = Quadruple(Operation.JMP, lhs=0X2000000000000000 + to)
+      quad = Quadruple(Operation.JMP, result=0X2000000000000000 + to)
 
     self._quads.push_quad(quad)
   
   def make_jump_f(self, to=None):
+    cond = self._operand_stack.pop()
+
     if to is None:
       self._jump_stack.push(self._quads.next_free_quad)
-      quad = Quadruple(Operation.JMP_F)
+      quad = Quadruple(Operation.JMP_F, cond)
     else:
-      quad = Quadruple(Operation.JMP_F, lhs=0X2000000000000000 + to)
+      quad = Quadruple(Operation.JMP_F, cond, result=0X2000000000000000 + to)
     
     self._quads.push_quad(quad)
+
+  def push_jmp(self):
+    self._jump_stack.push(self._quads.next_free_quad)
 
   def fill_jump(self):
     quad_no = self._jump_stack.pop()
