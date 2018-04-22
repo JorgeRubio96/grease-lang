@@ -546,6 +546,87 @@ void lessEqual( void ) {
 	}
 }
 
+void lessThan( void ) {
+	uint64_t lhs = (reg1 & CONTENT);
+	uint64_t rhs = (reg2 & CONTENT);
+	switch(reg1 & TYPE) {
+	case INT:
+		switch(reg2 & TYPE) {
+		case INT:
+			mem[reg3] = (uint64_t) ((int) lhs < (int) rhs);
+			break;
+		case FLOAT:
+			mem[reg3] = (uint64_t) ((int) lhs < (float) rhs);
+			break;
+		case CHAR:
+			mem[reg3] = (uint64_t) ((int) lhs < (char) rhs);
+			break;
+		case BOOL:
+			mem[reg3] = (uint64_t) ((int) lhs < (bool) rhs);
+			break;
+		default:
+			printf("Error!! in lt");
+		}
+		break;
+	case FLOAT:
+		switch(reg2 & TYPE) {
+		case INT:
+			mem[reg3] = (uint64_t) ((float) lhs < (int) rhs);
+			break;
+		case FLOAT:
+			mem[reg3] = (uint64_t) ((float) lhs < (float) rhs);
+			break;
+		case CHAR:
+			mem[reg3] = (uint64_t) ((float) lhs < (char) rhs);
+			break;
+		case BOOL:
+			mem[reg3] = (uint64_t) ((float) lhs < (bool) rhs);
+			break;
+		default:
+			printf("Error!! in lt");
+		}
+		break;
+	case CHAR:
+		switch(reg2 & TYPE) {
+		case INT:
+			mem[reg3] = (uint64_t) ((char) lhs < (int) rhs);
+			break;
+		case FLOAT:
+			mem[reg3] = (uint64_t) ((char) lhs < (float) rhs);
+			break;
+		case CHAR:
+			mem[reg3] = (uint64_t) ((char) lhs < (char) rhs);
+			break;
+		case BOOL:
+			mem[reg3] = (uint64_t) ((char) lhs < (bool) rhs);
+			break;
+		default:
+			printf("Error!! in lt");
+		}
+		break;
+	case BOOL:
+		switch(reg2 & TYPE) {
+		case INT:
+			mem[reg3] = (uint64_t) ((bool) lhs < (int) rhs);
+			break;
+		case FLOAT:
+			mem[reg3] = (uint64_t) ((bool) lhs < (float) rhs);
+			break;
+		case CHAR:
+			mem[reg3] = (uint64_t) ((bool) lhs < (char) rhs);
+			break;
+		case BOOL:
+			mem[reg3] = (uint64_t) ((bool) lhs < (bool) rhs);
+			break;
+		default:
+			printf("Error!! in lt");
+		}
+		break;
+	default:
+		printf("Error!! in lt");
+	}
+}
+
 void not( void ) {
 	uint64_t lhs = (reg1 & CONTENT);
 	switch(reg1 & TYPE) {
