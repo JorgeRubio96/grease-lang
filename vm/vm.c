@@ -73,6 +73,7 @@ uint64_t decode( uint64_t code )
 		return mem[sp + ( code & CONTENT)];
 	default:
 	 	printf("Error! in decode");
+	 	halt();
 	}
 }
 
@@ -104,6 +105,7 @@ void times( void ) {
 			break;
 		default:
 			printf("Error!! in TIMES");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -116,10 +118,12 @@ void times( void ) {
 			break;
 		default:
 			printf("Error!! in TIMES");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in TIMES");
+		halt();
 	}
 }
 
@@ -137,6 +141,7 @@ void divide( void ) {
 			break;
 		default:
 			printf("Error!! in DIVIDE");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -149,10 +154,12 @@ void divide( void ) {
 			break;
 		default:
 			printf("Error!! in DIVIDE");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in DIVIDE");
+		halt();
 	}
 }
 
@@ -170,6 +177,7 @@ void add( void ) {
 			break;
 		default:
 			printf("Error!! in ADD");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -182,10 +190,12 @@ void add( void ) {
 			break;
 		default:
 			printf("Error!! in ADD");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in ADD");	
+		halt();
 	}
 }
 
@@ -203,6 +213,7 @@ void reduct( void ) {
 			break;
 		default:
 			printf("Error!! in reduct");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -215,10 +226,12 @@ void reduct( void ) {
 			break;
 		default:
 			printf("Error!! in reduct");
+			halt();
 		}
 		break;
 	default:
 			printf("Error!! in reduct");
+			halt();
 	}
 }
 
@@ -242,6 +255,7 @@ void equals( void ) {
 			break;
 		default:
 			printf("Error!! in equals");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -260,6 +274,7 @@ void equals( void ) {
 			break;
 		default:
 			printf("Error!! in equals");
+			halt();
 		}
 		break;
 	case CHAR:
@@ -278,6 +293,7 @@ void equals( void ) {
 			break;
 		default:
 			printf("Error!! in equals");
+			halt();
 		}
 		break;
 	case BOOL:
@@ -296,10 +312,12 @@ void equals( void ) {
 			break;
 		default:
 			printf("Error!! in equals");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in equals");
+		halt();
 	}
 }
 
@@ -323,6 +341,7 @@ void greaterThan( void ) {
 			break;
 		default:
 			printf("Error!! in gt");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -341,6 +360,7 @@ void greaterThan( void ) {
 			break;
 		default:
 			printf("Error!! in gt");
+			halt();
 		}
 		break;
 	case CHAR:
@@ -359,6 +379,7 @@ void greaterThan( void ) {
 			break;
 		default:
 			printf("Error!! in gt");
+			halt();
 		}
 		break;
 	case BOOL:
@@ -377,10 +398,12 @@ void greaterThan( void ) {
 			break;
 		default:
 			printf("Error!! in gt");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in gt");
+		halt();
 	}
 }
 
@@ -404,6 +427,7 @@ void greaterEqual( void ) {
 			break;
 		default:
 			printf("Error!! in ge");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -422,6 +446,7 @@ void greaterEqual( void ) {
 			break;
 		default:
 			printf("Error!! in ge");
+			halt();
 		}
 		break;
 	case CHAR:
@@ -440,6 +465,7 @@ void greaterEqual( void ) {
 			break;
 		default:
 			printf("Error!! in ge");
+			halt();
 		}
 		break;
 	case BOOL:
@@ -458,10 +484,12 @@ void greaterEqual( void ) {
 			break;
 		default:
 			printf("Error!! in ge");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in ge");
+		halt();
 	}
 }
 
@@ -485,6 +513,7 @@ void lessEqual( void ) {
 			break;
 		default:
 			printf("Error!! in le");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -503,6 +532,7 @@ void lessEqual( void ) {
 			break;
 		default:
 			printf("Error!! in le");
+			halt();
 		}
 		break;
 	case CHAR:
@@ -521,6 +551,7 @@ void lessEqual( void ) {
 			break;
 		default:
 			printf("Error!! in le");
+			halt();
 		}
 		break;
 	case BOOL:
@@ -539,10 +570,12 @@ void lessEqual( void ) {
 			break;
 		default:
 			printf("Error!! in le");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in le");
+		halt();
 	}
 }
 
@@ -566,6 +599,7 @@ void lessThan( void ) {
 			break;
 		default:
 			printf("Error!! in lt");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -584,6 +618,7 @@ void lessThan( void ) {
 			break;
 		default:
 			printf("Error!! in lt");
+			halt();
 		}
 		break;
 	case CHAR:
@@ -602,6 +637,7 @@ void lessThan( void ) {
 			break;
 		default:
 			printf("Error!! in lt");
+			halt();
 		}
 		break;
 	case BOOL:
@@ -620,10 +656,12 @@ void lessThan( void ) {
 			break;
 		default:
 			printf("Error!! in lt");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in lt");
+		halt();
 	}
 }
 
@@ -644,6 +682,7 @@ void not( void ) {
 		break;
 	default:
 		printf("Error!! in not");
+		halt();
 	}
 }
 
@@ -664,6 +703,7 @@ void assign( void ) {
 		break;
 	default:
 		printf("Error!! in assign");
+		halt();
 	}
 }
 
@@ -684,6 +724,7 @@ void uMinus( void ) {
 		break;
 	default:
 		printf("Error!! in uMinus");
+		halt();
 	}
 }
 
@@ -707,6 +748,7 @@ void and( void ) {
 			break;
 		default:
 			printf("Error!! in and");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -725,6 +767,7 @@ void and( void ) {
 			break;
 		default:
 			printf("Error!! in and");
+			halt();
 		}
 		break;
 	case CHAR:
@@ -743,6 +786,7 @@ void and( void ) {
 			break;
 		default:
 			printf("Error!! in and");
+			halt();
 		}
 		break;
 	case BOOL:
@@ -761,10 +805,12 @@ void and( void ) {
 			break;
 		default:
 			printf("Error!! in and");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in and");
+		halt();
 	}
 }
 
@@ -788,6 +834,7 @@ void or( void ) {
 			break;
 		default:
 			printf("Error!! in or");
+			halt();
 		}
 		break;
 	case FLOAT:
@@ -806,6 +853,7 @@ void or( void ) {
 			break;
 		default:
 			printf("Error!! in or");
+			halt();
 		}
 		break;
 	case CHAR:
@@ -824,6 +872,7 @@ void or( void ) {
 			break;
 		default:
 			printf("Error!! in or");
+			halt();
 		}
 		break;
 	case BOOL:
@@ -842,10 +891,12 @@ void or( void ) {
 			break;
 		default:
 			printf("Error!! in or");
+			halt();
 		}
 		break;
 	default:
 		printf("Error!! in or");
+		halt();
 	}
 }
 
@@ -884,6 +935,7 @@ void print_( void ){
 			break;
 		default:
 			printf("Error!! in print");
+			halt();
 	}
 }
 
@@ -908,6 +960,7 @@ void scan_( void ){
 			break;
 		default:
 			printf("Error!! in scan");
+			halt();
 	}
 	
 }
@@ -929,6 +982,7 @@ void return_( void ){
 		break;
 	default:
 			printf("Error!! in return");
+			halt();
 	}
 
   pc = mem[sp - 2]; // Location of return addr
@@ -960,6 +1014,7 @@ void param( void ) {
 		break;
 	default:
 			printf("Error!! in param");
+			halt();
 	}
 }
 
