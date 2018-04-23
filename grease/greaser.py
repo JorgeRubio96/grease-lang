@@ -12,6 +12,7 @@ from grease.core.exceptions import UndefinedMember, UndefinedType, UndefinedInte
 from grease.core.stack import Stack
 from grease.core.substruct import SubstructNodeType
 from grease.semantic_cube import cube
+from sys import byteorder
 
 type_class_dict = {
   'Int': GreaseTypeClass.Int,
@@ -221,6 +222,7 @@ class Greaser:
     jump_to_main = self._jump_stack.pop()
 
     self._quads.fill_quad(jump_to_main, 0X2000000000000000 + main.start)
+    self._quads.push_quad(Quadruple(Operation.HALT))
 
   def print_stacks(self):
     """Print Stacks
@@ -235,6 +237,11 @@ class Greaser:
 
   def reset_local_address(self):
     self._next_local_address = 0x3000000000000000
+
+  def write_to_file(self, name):
+    out_file = open(name, 'wb')
+    out_file.write((2000).to_bytes(8, byteorder))
+    self._quads.write_to_file(out_file)
 
   @staticmethod
   def basic_type_from_text(name):

@@ -1,6 +1,7 @@
 from enum import Enum
 from grease.core.stack import Stack
 from grease.core.type import GreaseTypeClass
+from sys import byteorder
 
 class Operation(Enum):
   TIMES = 1
@@ -55,6 +56,15 @@ class QuadrupleStore:
 
   def fill_quad(self, quad_no, value):
     self._quads[quad_no].result = value
+
+  def write_to_file(self, out_file):
+    for quad in self._quads:
+      for el in quad.to_list():
+        if el is None:
+          out_file.write((0).to_bytes(8, byteorder))
+        else:
+          out_file.write(el.to_bytes(8,byteorder))
+
 
   def print_all(self):
     """prints all quadruples from list """

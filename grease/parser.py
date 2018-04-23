@@ -468,7 +468,7 @@ def p_optional_not(p):
     greaser.push_operator(Operation.NOT)
 
 def p_rel_expr(p):
-  '''rel_expr : arith_expr optional_comparison np_check_comparison '''
+  '''rel_expr : arith_expr np_check_comparison np_check_direct_not optional_comparison '''
   pass
 
 def p_optional_comparison(p):
@@ -488,6 +488,13 @@ def p_np_check_comparison(p):
   '''np_check_comparison : '''
   try:
     greaser.check_top_operator([Operation.EQ, Operation.GT, Operation.LT, Operation.GE, Operation.LE])
+  except GreaseError as e:
+    e.print(p.lineno(0))
+
+def p_np_check_direct_not(p):
+  '''np_check_direct_not : '''
+  try:
+    greaser.check_top_operator([Operation.NOT])
   except GreaseError as e:
     e.print(p.lineno(0))
 

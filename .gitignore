@@ -108,3 +108,7 @@ parsetab.py
 #Vim config
 .vimrc
 *.swp
+
+.vscode
+*.gbc
+vm/build

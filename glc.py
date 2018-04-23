@@ -1,6 +1,6 @@
 import sys
 from grease.scanner import grease_lexer
-from grease.parser import grease_parser
+from grease.parser import grease_parser, greaser
 
 def _main():
     data = ''
@@ -16,6 +16,7 @@ def _main():
 
 def compile(data):
     result = grease_parser.parse(data,lexer=grease_lexer, debug=False, tracking=True)
+    greaser.write_to_file('out.gbc')
 
 if __name__ == '__main__':
     _main()
