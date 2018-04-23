@@ -20,6 +20,7 @@ struct_builder = GreaseStructBuilder()
 var_builder = GreaseVarBuilder()
 fn_builder = GreaseFnBuilder()
 current_struct = None
+declaration_assignment = False
 
 precedence = (
   ('left', 'PLUS', 'MINUS'),
@@ -39,7 +40,7 @@ def p_program(p):
   
   # Debug print
   # TODO: Remove before release
-  # greaser._quads.print_all()
+  greaser._quads.print_all()
 
 def p_np_jump_to_main(p):
   '''np_jump_to_main : '''
@@ -91,31 +92,36 @@ def p_declaration(p):
 
 def p_variable(p):
   '''variable : VAR ID variable_body NEW_LINE'''
+  global declaration_assignment
+
   try:
     v = var_builder.build()
     greaser.add_variable(p[2], v)
-    var_builder.reset()
   except GreaseError as e:
-    e.print(p.lineno(2))
+    e.print(p.lineno(-1))
     raise
-  
-  var_builder.reset()
 
+  if declaration_assignment:
+    expr = greaser._operand_stack.pop()
+    greaser.push_operand(v)
+    greaser.push_operand(expr)
+    greaser.push_operator(Operation.ASSIGN)
+    greaser.make_assign()
+    declaration_assignment = False
+
+  var_builder.reset()
 
 def p_variable_body(p):
   '''variable_body : COLON compound_type
                    | EQUALS expression'''
   if p[1] is ':':
-    # Type assignment
-    t = p[2]
+    # Type is passed down by type
+    var_builder.add_type(p[2])
   else:
-    # Expession assignment
-    # TODO: Enable when quadruples are ready
-    #last_quad = Quadruples.quad_list[-1]
-    #t = last_quad.result.type
-    t = GreaseType(GreaseTypeClass.Int)
-
-  var_builder.add_type(t)
+    global declaration_assignment
+    var_builder.add_type(greaser.top_operand_type())
+    declaration_assignment = True
+    
 
 
 def p_function(p):
@@ -360,19 +366,20 @@ def p_statement_body(p):
   pass
 
 def p_assignment(p):
-  '''assignment : sub_struct EQUALS expression'''
-  try:
-    var = greaser.find_variable(p[1])
-  except GreaseError as e:
-    e.print(p.lineno(1))
-    raise
+  '''assignment : sub_struct EQUALS np_push_assignment expression'''
+  greaser.make_assign()
+
+def p_np_push_assignment(p):
+  '''np_push_assignment : '''
+  greaser.push_operator(Operation.ASSIGN)
 
 def p_condition(p):
-  '''condition : IF expression COLON NEW_LINE block optional_else'''
+  '''condition : IF expression np_condition COLON NEW_LINE block np_optional_else optional_else'''
   pass
 
 def p_np_condition(p):
-  
+  '''np_condition : '''
+  greaser.make_jump_f()
   
 
 def p_optional_else(p):
@@ -381,29 +388,30 @@ def p_optional_else(p):
   pass
 
 def p_np_optional_else(p):
-  
+  '''np_optional_else : '''
+  greaser.fill_jump()
+  greaser.make_jump(to_stack=True)
 
 def p_cycle(p):
-  '''cycle : WHILE np_begin_cycle expression COLON NEW_LINE block'''
+  '''cycle : WHILE np_begin_cycle expression np_cycle COLON NEW_LINE block '''
   greaser.fill_jump()
-  greaser.make_jump()
-  pass
+  greaser.make_jump(to_stack=True)
 
 def p_np_begin_cycle(p):
   '''np_begin_cycle : '''
   greaser.push_jmp()
 
 def p_np_cycle(p):
+  '''np_cycle : '''
   greaser.make_jump_f()
-  
-
 
 def p_print(p):
   '''print : PRINT expression'''
-  pass
+  greaser.make_io(Operation.PRINT)
 
 def p_scan(p):
   '''scan : SCAN sub_struct'''
+  greaser.make_io(Operation.SCAN)
 
 def p_expression(p):
   '''expression : logic_expr np_check_or optional_or'''
@@ -484,19 +492,22 @@ def p_np_check_comparison(p):
     e.print(p.lineno(0))
 
 def p_arith_expr(p):
-  '''arith_expr : term np_check_arith_op optional_arith_op'''
+  '''arith_expr : term np_check_arith_expr optional_arith_op'''
   pass
 
 def p_optional_arith_op(p):
-  '''optional_arith_op : PLUS arith_expr
-                       | MINUS arith_expr
+  '''optional_arith_op : arith_operator arith_expr
                        | empty'''
-  if p[1] is not None:
-    operator = greaser.operator_from_text(p[1])
-    greaser.push_operator(operator)
+  pass
 
-def p_np_check_arith_op(p):
-  '''np_check_arith_op : '''
+def p_arith_operator(p):
+  '''arith_operator : PLUS
+                    | MINUS'''
+  operator = greaser.operator_from_text(p[1])
+  greaser.push_operator(operator)
+
+def p_np_check_arith_expr(p):
+  '''np_check_arith_expr : '''
   try:
     greaser.check_top_operator([Operation.PLUS, Operation.MINUS])
   except GreaseError as e:
@@ -506,19 +517,23 @@ def p_term(p):
   '''term : factor np_check_term optional_mult_div'''
   pass
 
+def p_optional_mult_div(p):
+  '''optional_mult_div : mult_operator term
+                       | empty'''
+  pass
+
+def p_mult_operator(p):
+  '''mult_operator : TIMES
+                   | DIVIDE'''
+  greaser.push_operator(greaser.operator_from_text(p[1]))
+
+
 def p_np_check_term(p):
   '''np_check_term : '''
   try:
     greaser.check_top_operator([Operation.TIMES, Operation.DIVIDE])
   except GreaseError as e:
     e.print(p.lineno(0))
-
-def p_optional_mult_div(p):
-  '''optional_mult_div : TIMES term
-                       | DIVIDE term
-                       | empty'''
-  if p[1] is not None:
-    greaser.push_operator(greaser.operator_from_text(p[1]))
 
 def p_factor(p):
   '''factor : optional_sign value np_check_factor'''
@@ -627,7 +642,7 @@ def p_const(p):
            | CONST_REAL
            | TRUE
            | FALSE'''
-  p[0] = p[1]
+  greaser.push_constant(p[1])
 
 def p_empty(p):
   'empty :'

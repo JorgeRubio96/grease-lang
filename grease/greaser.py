@@ -126,6 +126,9 @@ class Greaser:
   def close_scope(self):
     self._scope = self._scope.parent
 
+  def top_operand_type(self):
+    return self._operand_stack.peek().type
+
   def push_operator(self, operator):
     self._operator_stack.push(operator)
 
@@ -140,23 +143,23 @@ class Greaser:
     self._agregate_stack.push(self._operand_stack.pop())
     pass
 
-  def make_jump(self, to=None):
-    if to is None:
+  def push_constant(self, cnst):
+    t = GreaseType(GreaseTypeClass.Int)
+    self._operand_stack.push(GreaseVar(t,0X2000000000000000 + cnst))
+
+  def make_jump(self, to_stack=False):
+    if to_stack:
+      to = self._jump_stack.pop()
+      quad = Quadruple(Operation.JMP, result=0X2000000000000000 + to)
+    else:
       self._jump_stack.push(self._quads.next_free_quad)
       quad = Quadruple(Operation.JMP)
-    else:
-      quad = Quadruple(Operation.JMP, result=0X2000000000000000 + to)
 
     self._quads.push_quad(quad)
   
-  def make_jump_f(self, to=None):
-    cond = self._operand_stack.pop()
-
-    if to is None:
-      self._jump_stack.push(self._quads.next_free_quad)
-      quad = Quadruple(Operation.JMP_F, cond)
-    else:
-      quad = Quadruple(Operation.JMP_F, cond, result=0X2000000000000000 + to)
+  def make_jump_f(self):
+    self._jump_stack.push(self._quads.next_free_quad)
+    quad = Quadruple(Operation.JMP_F)
     
     self._quads.push_quad(quad)
 
@@ -184,7 +187,7 @@ class Greaser:
     return_type_class = cube.check(lhs, op, lhs)
     
     if return_type_class is None:
-      raise TypeMismatch('{} {} {}'.format(lhs.type, op, rhs.type))
+      raise TypeMismatch('{} {} {}'.format(lhs, op, rhs))
 
     tmp_type = GreaseType(return_type_class)
     tmp_var = GreaseVar(tmp_type, self._next_local_address)
@@ -198,7 +201,7 @@ class Greaser:
     # push the tmp_var to stack
     self._operand_stack.push(tmp_var)
   
-  def make_assign(self, lhs):
+  def make_assign(self):
     expr = self._operand_stack.pop()
     var = self._operand_stack.pop()
     if var.type.type_class is not expr.type.type_class:
@@ -206,7 +209,12 @@ class Greaser:
     op = self._operator_stack.pop()
 
     #generate quad and push it to the list
-    self._quads.push_quad(Quadruple(op, lhs=expr, result=var))
+    self._quads.push_quad(Quadruple(op, lhs=expr.address, result=var.address))
+
+  def make_io(self, operator):
+    expr = self._operand_stack.pop()
+
+    self._quads.push_quad(Quadruple(operator, expr.address))
 
   def resolve_main(self):
     main = self.find_function('main')
