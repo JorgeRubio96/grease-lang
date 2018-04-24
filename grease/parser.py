@@ -374,8 +374,8 @@ def p_np_push_assignment(p):
   greaser.push_operator(Operation.ASSIGN)
 
 def p_condition(p):
-  '''condition : IF expression np_condition COLON NEW_LINE block np_optional_else optional_else'''
-  pass
+  '''condition : IF expression np_condition COLON NEW_LINE block optional_else'''
+  greaser.fill_jump()
 
 def p_np_condition(p):
   '''np_condition : '''
@@ -383,18 +383,19 @@ def p_np_condition(p):
   
 
 def p_optional_else(p):
-  '''optional_else : ELSE COLON NEW_LINE block
+  '''optional_else : ELSE np_found_else COLON NEW_LINE block
                    | empty'''
   pass
 
-def p_np_optional_else(p):
-  '''np_optional_else : '''
-  greaser.fill_jump()
-  greaser.make_jump(to_stack=True)
+
+def p_np_found_else(p):
+  '''np_found_else : '''
+  greaser.fill_jump(1)
+  greaser.make_jump()
 
 def p_cycle(p):
   '''cycle : WHILE np_begin_cycle expression np_cycle COLON NEW_LINE block '''
-  greaser.fill_jump()
+  greaser.fill_jump(1)
   greaser.make_jump(to_stack=True)
 
 def p_np_begin_cycle(p):

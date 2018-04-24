@@ -26,7 +26,7 @@ operators_dict = {
   '/' : Operation.DIVIDE, 
   '+' : Operation.PLUS,
   '-' : Operation.MINUS,
-  '==' : Operation.EQ,
+  'eq' : Operation.EQ,
   'gt' : Operation.GT,
   'lt' : Operation.LT,
   'ge' : Operation.GE,
@@ -127,6 +127,13 @@ class Greaser:
   def close_scope(self):
     self._scope = self._scope.parent
 
+  def push_fake_bottom(self):
+    self._operand_stack.push('(')
+
+  def pop_fake_bottom(self):
+    if self._operand_stack.pop() is not '(':
+      raise GreaseError("Not Fake bottom")
+
   def top_operand_type(self):
     return self._operand_stack.peek().type
 
@@ -141,8 +148,11 @@ class Greaser:
     self._operand_stack.push(operand)
 
   def push_agregate_stack(self):
-    self._agregate_stack.push(self._operand_stack.pop())
-    pass
+    arr = self._operand_stack.pop()
+    if arr.type.type_class is not GreaseTypeClass.Array:
+      raise TypeMismatch("Operand is not array.")
+    self._agregate_stack.push()
+    self.push_fake_bottom()
 
   def push_constant(self, cnst):
     t = GreaseType(GreaseTypeClass.Int)
@@ -160,19 +170,19 @@ class Greaser:
   
   def make_jump_f(self):
     self._jump_stack.push(self._quads.next_free_quad)
-    quad = Quadruple(Operation.JMP_F)
-    
+    cond = self._operand_stack.pop()
+    quad = Quadruple(Operation.JMP_F, cond.address)    
     self._quads.push_quad(quad)
 
   def push_jmp(self):
     self._jump_stack.push(self._quads.next_free_quad)
 
-  def fill_jump(self):
+  def fill_jump(self, offset=0):
     quad_no = self._jump_stack.pop()
 
     if quad_no is not None:
       next_quad = self._quads.next_free_quad
-      self._quads.fill_quad(quad_no, 0X2000000000000000 + next_quad)
+      self._quads.fill_quad(quad_no, 0X2000000000000000 + next_quad + offset)
     else:
       raise GreaseError('No jumps pending to be resolved')
 
@@ -234,6 +244,9 @@ class Greaser:
 
     print("> Operator Stack = ")
     self._operator_stack.pprint()
+
+    print("> Jump Stack = ")
+    self._jump_stack.pprint()
 
   def reset_local_address(self):
     self._next_local_address = 0x3000000000000000
