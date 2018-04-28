@@ -51,6 +51,7 @@ class Greaser:
     self._quads = QuadrupleStore()
     self._next_local_address = 0x3000000000000000
     self._next_global_address = 0x0000000000000000
+    self._dim = 0
 
   def find_function(self, name):
     fn = self._global_fns.find_function(name)
@@ -151,8 +152,26 @@ class Greaser:
     arr = self._operand_stack.pop()
     if arr.type.type_class is not GreaseTypeClass.Array:
       raise TypeMismatch("Operand is not array.")
-    self._agregate_stack.push()
+    self._agregate_stack.push(arr)
     self.push_fake_bottom()
+    self._dim = 0
+    
+
+  def push_dim_stack(self):
+    arr = self._agregate_stack.peek()
+    if len(arr.type.dimens) > self._dim : #if the next pointer is different from null then
+      t = self._operand_stack.peek()
+      ver = Quadruple(Operation.VER, t.address, arr.type.dimens[self._dim].size)
+      self._operator_stack.push(Operation.TIMES)
+      self._operand_stack.push(arr.type.dimens[self._dim].offset)
+      self.make_expression()
+    if self._dim > 0:
+      self._operator_stack.push(Operation.PLUS)
+      self.make_expression()
+  
+
+  def push_declare_stack(self):
+    
 
   def push_constant(self, cnst):
     t = GreaseType(GreaseTypeClass.Int)
