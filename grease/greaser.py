@@ -15,10 +15,10 @@ from grease.semantic_cube import cube
 from sys import byteorder
 
 type_class_dict = {
-  'Int': GreaseTypeClass.Int,
+  'Int'  : GreaseTypeClass.Int,
   'Float': GreaseTypeClass.Float,
-  'Char': GreaseTypeClass.Char,
-  'Bool': GreaseTypeClass.Bool,
+  'Char' : GreaseTypeClass.Char,
+  'Bool' : GreaseTypeClass.Bool,
 }
 
 operators_dict = {
@@ -26,7 +26,7 @@ operators_dict = {
   '/' : Operation.DIVIDE, 
   '+' : Operation.PLUS,
   '-' : Operation.MINUS,
-  '==' : Operation.EQ,
+  'eq' : Operation.EQ,
   'gt' : Operation.GT,
   'lt' : Operation.LT,
   'ge' : Operation.GE,
@@ -51,6 +51,8 @@ class Greaser:
     self._quads = QuadrupleStore()
     self._next_local_address = 0x3000000000000000
     self._next_global_address = 0x0000000000000000
+    self._active_fn = None
+    self._next_param = 0
 
   def find_function(self, name):
     fn = self._global_fns.find_function(name)
@@ -176,6 +178,23 @@ class Greaser:
     else:
       raise GreaseError('No jumps pending to be resolved')
 
+  def make_fn_call(self, fn):
+    era = Quadruple(Operation.ERA, fn.size)
+    self._quads.push_quad(era)
+    self._active_fn = fn
+    self._next_param = 0
+
+  def make_param(self):
+    arg = self._operand_stack.pop()
+    param = self._active_fn.params[self._next_param]
+
+    if not Greaser.can_assign(arg.type, param.type):
+      raise TypeMismatch('Found {} but expected {} in arg {}'.format(arg, param, self._next_param))
+
+    param_quad = Quadruple(Operation.PARAM, arg.address, result=self._next_param)
+    
+    self._quads.push_quad(param_quad)
+
   #Exp quad helper
   def make_expression(self):
     """Exp quad helper:
@@ -251,3 +270,30 @@ class Greaser:
   def operator_from_text(text):
     return operators_dict.get(text)
 
+  @staticmethod
+  def can_assign(type_l, type_r):
+    
+    if type_l.type_class is GreaseTypeClass.Array:
+      # ArraysTypes cannot be assigned
+      return False
+
+    elif type_l.type_class is GreaseTypeClass.Struct:
+      # StructTypes have struct variable in type_data
+      return type_l.type_data is type_r.type_data
+
+    elif type_l.type_class is GreaseTypeClass.Interface:
+      # InterfaceTypes may be assigned an interface of the same type
+      # or a struct that satisfies that interface
+      if type_r.type_class is GreaseTypeClass.Interface:
+        # InterfaceTypes have interface variable in type_data
+        return type_l.type_data is type_r.type_data
+
+      # Second type is struct. Check if it satisfies interface
+      return type_r.type_data.has_interface(type_l.type_data)
+
+    elif type_l.type_class is GreaseTypeClass.Pointer:
+      # PointerTypes have type variable in type_data
+      return Greaser.can_assign(type_l.type_data, type_r.type_data)
+
+    # All other type_classes may be assigned to themselves
+    return type_l.type_class is type_r.type_class

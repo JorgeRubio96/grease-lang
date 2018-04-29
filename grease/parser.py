@@ -213,10 +213,10 @@ def p_optional_struct_interfaces(p):
   '''optional_struct_interfaces : COLON more_interfaces interface_id
                                 | empty'''
   if len(p) > 2:
-      vtable_t = greaser.find_struct('vtable')
-      var_builder.add_type(GreaseType(GreaseTypeClass.Pointer, vtable_t))
-      vtable = var_builder.build()
-      struct_builder.add_member('vtable', vtable)
+    vtable_t = greaser.find_struct('vtable')
+    var_builder.add_type(GreaseType(GreaseTypeClass.Pointer, vtable_t))
+    vtable = var_builder.build()
+    struct_builder.add_member('vtable', vtable)
 
 def p_interface_id(p):
   '''interface_id : ID'''
@@ -563,13 +563,22 @@ def p_value(p):
   '''value : OPEN_PAREN expression CLOSE_PAREN
            | fn_call
            | const
-           | sub_struct'''
+           | sub_struct np_push_substruct'''
   pass
 
+def p_np_push_substruct(p):
+  '''np_push_substruct : '''
+  push_substruct()
+
 def p_fn_call(p):
-  '''fn_call : sub_struct OPEN_PAREN optional_arguments CLOSE_PAREN'''
+  '''fn_call : sub_struct np_fn_name OPEN_PAREN optional_arguments CLOSE_PAREN'''
+  pass
+
+def p_np_fn_name(p):
+  '''np_fn_name : '''
   try:
-    greaser.find_function(p[1])
+    fn = greaser.find_function(p[1])
+    greaser.push_fn(fn)
   except GreaseError as e:
     e.print(p.lineno(1))
     raise
@@ -605,11 +614,11 @@ def p_sub_struct_body(p):
 
 def p_np_found_id(p):
   '''np_found_id : '''
-  try:
-    var = greaser.find_variable(p[-1])
-    greaser.push_operand(var)
-  except GreaseError as e:
-    e.print(p.lineno(-1))
+  global last_id
+  if last_id is not None:
+    var = greaser.find_variable
+  last_id = p[-1]
+  greaser.push_id(p[-1])
 
 def p_optional_sub_index(p):
     '''optional_sub_index : OPEN_BRACK np_found_array expression more_sub_index CLOSE_BRACK

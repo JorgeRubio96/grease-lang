@@ -27,6 +27,9 @@ class GreaseStruct:
         self.variables.add_variable(name, var)
         self.next_addr += 1
 
+    def has_interface(self, interface):
+        return interface in self.interfaces._interfaces.values()
+
 class GreaseStructBuilder:
     def __init__(self):
         self._variables = {}
