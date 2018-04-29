@@ -1,0 +1,17 @@
+var a : Int
+var b = 2
+
+fn main() : Int
+  scan a
+  if a eq 2 :
+  	print a
+  else :
+  	print b + 1
+
+  a = 5
+  while a gt 2 :
+  	print a
+  	a = a - 1
+
+  print a + b * b - a
+  return 0

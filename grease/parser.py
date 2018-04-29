@@ -324,7 +324,7 @@ def p_pointer(p):
   p[0] = GreaseType(GreaseTypeClass.Pointer, p[1])
 
 def p_array(p):
-  '''array : OPEN_BRACK basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
+  '''array : OPEN_BRACK np_declaration_dim_var basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
   dimens = [p[4]] + p[5]
   p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens)
   #TODO: Signal as array
@@ -374,8 +374,8 @@ def p_np_push_assignment(p):
   greaser.push_operator(Operation.ASSIGN)
 
 def p_condition(p):
-  '''condition : IF expression np_condition COLON NEW_LINE block np_optional_else optional_else'''
-  pass
+  '''condition : IF expression np_condition COLON NEW_LINE block optional_else'''
+  greaser.fill_jump()
 
 def p_np_condition(p):
   '''np_condition : '''
@@ -383,18 +383,19 @@ def p_np_condition(p):
   
 
 def p_optional_else(p):
-  '''optional_else : ELSE COLON NEW_LINE block
+  '''optional_else : ELSE np_found_else COLON NEW_LINE block
                    | empty'''
   pass
 
-def p_np_optional_else(p):
-  '''np_optional_else : '''
-  greaser.fill_jump()
-  greaser.make_jump(to_stack=True)
+
+def p_np_found_else(p):
+  '''np_found_else : '''
+  greaser.fill_jump(1)
+  greaser.make_jump()
 
 def p_cycle(p):
   '''cycle : WHILE np_begin_cycle expression np_cycle COLON NEW_LINE block '''
-  greaser.fill_jump()
+  greaser.fill_jump(1)
   greaser.make_jump(to_stack=True)
 
 def p_np_begin_cycle(p):
@@ -621,23 +622,35 @@ def p_np_found_id(p):
   greaser.push_id(p[-1])
 
 def p_optional_sub_index(p):
-    '''optional_sub_index : OPEN_BRACK np_found_array expression more_sub_index CLOSE_BRACK
+    '''optional_sub_index : OPEN_BRACK np_found_array expression np_dim_exp more_sub_index CLOSE_BRACK np_arr_add
                           | empty'''
     pass
-
-def p_np_found_array(p):
-  '''np_found_array : '''
-  greaser.push_agregate_stack()
 
 def p_more_sub_index(p):
   '''more_sub_index : more_sub_index COMMA np_next_sub_index expression
                     | empty'''
   pass
 
+def p_np_found_array(p):
+  '''np_found_array : '''
+  greaser.push_agregate_stack() #verifies in the var table, and check is type array
+
+def p_np_dim_exp(p):
+  '''np_dim_exp : '''
+  greaser.push_dim_stack() #generates Quad
+
 def p_np_next_sub_index(p):
   '''np_next_sub_index : '''
   #TODO: Calculate subindex address
-  pass
+  greaser.add_dim() 
+
+def p_np_arr_add(p):
+  '''np_arr_add : '''
+  greaser.set_arr_add()
+
+def p_np_declaration_dim_var(p):
+  '''np_declaration_dim_var : '''
+  greaser.push_declare_stack()
 
 def p_more_sub_struct(p):
   '''more_sub_struct : more_sub_struct sub_struct_operator sub_struct_body
