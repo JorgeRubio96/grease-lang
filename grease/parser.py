@@ -665,9 +665,10 @@ def p_more_sub_struct(p):
 def p_sub_struct_operator(p):
   '''sub_struct_operator : DOT
                          | ARROW'''
-  #TODO: Move last id into substruct stack
-  #TODO: Calculate new address
-  pass
+  greaser.push_operator(Operation.ACCESS)  
+  
+  if p[1] is '->':
+    greaser.push_operator(Operation.DEREF)
 
 def p_const(p):
   '''const : CONST_INT

@@ -202,19 +202,46 @@ class Greaser:
     self._last_substruct = name
 
   def make_operand(self):
+    if self._operator_stack.peek() is Operation.DEREF:
+      self._operator_stack.pop() # This operation can not be executed by VM
+      self.make_deref()
+
     if self._operator_stack.peek() is Operation.ACCESS:
-      self._operator_stack.pop()
-      parent = self._operand_stack.pop()
+      self._operator_stack.pop() # This operation can not be executed by VM
+      parent = self._operand_stack.peek()
       
       if parent.type.type_class is not GreaseTypeClass.Struct:
-        raise UndefinedVariable(self._last_substruct)
+        raise TypeMismatch('Expression must be struct')
 
       var = parent.type.type_data.variables.find_variable(self._last_substruct)
-      parent_addr = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AccessMethod.Literal)
+
+      if var is None:
+        raise UndefinedMember(self._last_substruct)
+      
+      self.make_addr()
+      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AccessMethod.Literal)
+      self.push_operand(offset)
       
       self.make_offset(var.type)
     else:
       var = find_variable(self._last_substruct)
+      self.push_operand(var)
+
+  def make_deref(self):
+    pointer = self._operand_stack.pop()
+
+    if pointer.type.type_class is not GreaseTypeClass.Pointer:
+      raise TypeMismatch('Expression is not a pointer')
+
+    if pointer.method is AccessMethod.Indirect:
+      temp = GreaseVar(pointer.type_data, self._next_local_address, AccessMethod.Indirect)
+      self._next_local_address += temp.type.size
+
+      self._quads.push_quad(Operation.EQ, pointer, result=temp)
+    else:
+      temp = GreaseVar(pointer.type_data, pointer._address, AccessMethod.Indirect)
+    
+    self.push_operand(temp)
 
   def make_offset(self, var_type):
     self.push_operator(Operation.PLUS)
