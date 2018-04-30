@@ -160,7 +160,6 @@ class Greaser:
     self.push_fake_bottom()
     self._dim = 0
     
-
   def push_dim_stack(self):
     arr = self._agregate_stack.peek()
     if len(arr.type.dimens) > self._dim : #if the next pointer is different from null then
