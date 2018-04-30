@@ -10,7 +10,6 @@ from grease.core.exceptions import GreaseError, UndefinedFunction
 from grease.core.quadruple import QuadrupleStore, Quadruple, Operation
 from grease.core.stack import Stack
 from grease.core.type import GreaseType, GreaseTypeClass
-from grease.core.substruct import SubstrctBuilder
 from grease.core.dimension import GreaseDimension
 
 greaser = Greaser()
@@ -122,7 +121,6 @@ def p_variable_body(p):
     global declaration_assignment
     var_builder.add_type(greaser.top_operand_type())
     declaration_assignment = True
-    
 
 
 def p_function(p):
@@ -340,7 +338,7 @@ def p_array(p):
   p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens, total_size)
 
 def p_array_more_dimens(p):
-  '''array_more_dimens : array_more_dimens COMMA CONST_INT p_np_arr_add
+  '''array_more_dimens : array_more_dimens COMMA CONST_INT np_arr_add
                        | empty'''
   if len(p) > 2:
     p[0] = [GreaseDimension(p[3])] + p[1]
@@ -625,7 +623,7 @@ def p_sub_struct_body(p):
 
 def p_np_found_id(p):
   '''np_found_id : '''
-  greaser._substruct_stack(p[-1])
+  greaser.push_substruct(p[-1])
 
 def p_optional_sub_index(p):
     '''optional_sub_index : OPEN_BRACK np_found_array expression np_dim_exp more_sub_index CLOSE_BRACK np_arr_add
