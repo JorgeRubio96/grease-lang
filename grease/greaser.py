@@ -180,19 +180,17 @@ class Greaser:
     #actualizar DIM EN PILADIMENSIONADAS
 
   def set_arr_add(self):
-    arr = self._agregate_stack.peek()
+    arr = self._agregate_stack.pop()
+    self._operand_stack.push(arr)
+    self.make_addr()
+    self.make_offset(arr.type_data)
+    self.pop_fake_bottom()
 
-    aux1 = self._operand_stack.pop()
-    t = self._operand_stack.peek()
-    #obtener el valor de k
-    quad = Quadruple(Operation.PLUS , aux1.address, k.address ,t.address)
-    self._quads.push_quad(quad)
-    #obtener el valor de BASE
-    quad2 = Quadruple(Operation.PLUS , t.address, BASE.address ,t.address)
-    self._quads.push_quad(quad2)
-    self._operand_stack.push(t.address)
-    self._agregate_stack.pop()
-    self.make_expression()
+  def make_addr(self):
+    aux = self._operand_stack.pop()
+    temp = GreaseVar(GreaseType(GreaseTypeClass.Int), self._next_local_address, AddressingMethod.Relative)
+    qued = Quadruple(Operation.ADDR, aux.address, result=temp)
+    self._next_local_address += 1
 
   def push_constant(self, cnst):
     # TODO: Identify types
@@ -218,9 +216,7 @@ class Greaser:
     else:
       var = find_variable(self._last_substruct)
 
-  def make_offset(self, var_type, base):
-    base = GreaseVar(GreaseType(GreaseTypeClass.Int), base, AccessMethod.Literal)
-    self.push_operand(base)
+  def make_offset(self, var_type):
     self.push_operator(Operation.PLUS)
     self.make_expression()
     res = self._operand_stack.peek()
