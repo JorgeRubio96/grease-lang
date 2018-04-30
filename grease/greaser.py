@@ -161,6 +161,11 @@ class Greaser:
     self.push_fake_bottom()
     self._dim = 0
 
+  def push_declare_array_stack(self):
+    arr = self._operand_stack.pop()
+    
+    
+
   def push_dim_stack(self):
     arr = self._agregate_stack.peek()
     if len(arr.type.dimens) > self._dim : #if the next pointer is different from null then
@@ -193,7 +198,7 @@ class Greaser:
     self._agregate_stack.pop()
     self.make_expression()
 
-  def push_declare_array_stack(self, dimens):
+  def generate_address_arr(self, dimens):
     for self._dim in dimens:
       SUM = SUM + 0
       self._dim = self._dim + 1 # confusión
