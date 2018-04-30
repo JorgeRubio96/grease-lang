@@ -11,6 +11,7 @@ from grease.core.quadruple import QuadrupleStore, Quadruple, Operation
 from grease.core.stack import Stack
 from grease.core.type import GreaseType, GreaseTypeClass
 from grease.core.substruct import SubstrctBuilder
+from grease.core.dimension import GreaseDimension
 
 greaser = Greaser()
 
@@ -324,17 +325,25 @@ def p_pointer(p):
   p[0] = GreaseType(GreaseTypeClass.Pointer, p[1])
 
 def p_array(p):
-  '''array : OPEN_BRACK np_declaration_dim_var basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK np_generate_address_array'''
-  dimens = [p[5]] + p[6]
-  p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens)
-  #TODO: Signal as array
-  greaser.push_declare_array_stack(dimens)
+  '''array : OPEN_BRACK basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
+  dimens = [GreaseDimension(p[4])] + p[5]
+  r = 1
+  for dimen in dimens:
+    r = r * dimen.size
+  
+  total_size = r
+
+  for dimen in dimens:
+    dimen.offset = r / dimen.size
+    r = dimen.offset
+  
+  p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens, total_size)
 
 def p_array_more_dimens(p):
   '''array_more_dimens : array_more_dimens COMMA CONST_INT p_np_arr_add
                        | empty'''
   if len(p) > 2:
-    p[0] = [p[3]] + p[1]
+    p[0] = [GreaseDimension(p[3])] + p[1]
   else:
     p[0] = []
 
@@ -647,10 +656,6 @@ def p_np_next_sub_index(p):
 def p_np_arr_add(p):
   '''np_arr_add : '''
   greaser.set_arr_add()
-
-def p_np_declaration_dim_var(p):
-  '''np_declaration_dim_var : '''
-  greaser.push_declare_stack()
 
 def p_more_sub_struct(p):
   '''more_sub_struct : more_sub_struct sub_struct_operator sub_struct_body

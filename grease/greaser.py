@@ -160,10 +160,6 @@ class Greaser:
     self._agregate_stack.push(arr)
     self.push_fake_bottom()
     self._dim = 0
-
-  def push_declare_array_stack(self):
-    arr = self._operand_stack.pop()
-    
     
 
   def push_dim_stack(self):
@@ -172,7 +168,8 @@ class Greaser:
       t = self._operand_stack.peek()
       ver = Quadruple(Operation.VER, t.address, arr.type.dimens[self._dim].size)
       self._operator_stack.push(Operation.TIMES)
-      self._operand_stack.push(arr.type.dimens[self._dim].offset)
+      offset = GreaseVar(GreaseType(GreaseType.Int), arr.type.dimens[self._dim].offset, AccessMethod.Literal)
+      self._operand_stack.push(offset.address)
       self.make_expression()
     if self._dim > 0:
       self._operator_stack.push(Operation.PLUS)
@@ -181,7 +178,6 @@ class Greaser:
   def add_dim(self):
     self._dim = self._dim + 1
     #actualizar DIM EN PILADIMENSIONADAS
-
 
   def set_arr_add(self):
     arr = self._agregate_stack.peek()
@@ -197,14 +193,6 @@ class Greaser:
     self._operand_stack.push(t.address)
     self._agregate_stack.pop()
     self.make_expression()
-
-  def generate_address_arr(self, dimens):
-    for self._dim in dimens:
-      SUM = SUM + 0
-      self._dim = self._dim + 1 # confusión
-    
-    self._k = SUM * -1 #almacenar -k
-    dirBase = dirBase + aux #aux se queda con el tamaño total
 
   def push_constant(self, cnst):
     # TODO: Identify types
@@ -225,17 +213,19 @@ class Greaser:
 
       var = parent.type.type_data.variables.find_variable(self._last_substruct)
       parent_addr = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AccessMethod.Literal)
-      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AccessMethod.Literal)
       
-      self.push_operand(offset)
-      self.push_operator(Operation.PLUS)
-      self.make_expression()
-
-      res = self._operand_stack.peek()
-      res.method = AccessMethod.INDIRECT
-      res.type = GreaseType(GreaseTypeClass.Pointer, var.type)
+      self.make_offset(var.type)
     else:
       var = find_variable(self._last_substruct)
+
+  def make_offset(self, var_type, base):
+    base = GreaseVar(GreaseType(GreaseTypeClass.Int), base, AccessMethod.Literal)
+    self.push_operand(base)
+    self.push_operator(Operation.PLUS)
+    self.make_expression()
+    res = self._operand_stack.peek()
+    res.method = AccessMethod.INDIRECT
+    res.type = GreaseType(GreaseTypeClass.Pointer, var_type)
 
   def make_jump(self, to_stack=False):
     if to_stack:
