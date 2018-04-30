@@ -325,9 +325,10 @@ def p_pointer(p):
 
 def p_array(p):
   '''array : OPEN_BRACK np_declaration_dim_var basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
-  dimens = [p[4]] + p[5]
+  dimens = [p[5]] + p[6]
   p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens)
   #TODO: Signal as array
+  greaser.push_declare_array_stack(dimens)
 
 def p_array_more_dimens(p):
   '''array_more_dimens : array_more_dimens COMMA CONST_INT
@@ -618,7 +619,7 @@ def p_optional_sub_index(p):
     pass
 
 def p_more_sub_index(p):
-  '''more_sub_index : more_sub_index COMMA np_next_sub_index expression
+  '''more_sub_index : more_sub_index COMMA np_next_sub_index expression np_dim_exp
                     | empty'''
   pass
 
