@@ -2,6 +2,7 @@ import sys
 from grease.scanner import grease_lexer
 from grease.parser import grease_parser, greaser
 
+
 def _main():
     data = ''
 

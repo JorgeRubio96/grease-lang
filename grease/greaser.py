@@ -10,7 +10,6 @@ from grease.core.function_directory import FunctionDirectory
 from grease.core.exceptions import TypeMismatch, UndefinedVariable, UndefinedFunction, GreaseError
 from grease.core.exceptions import UndefinedMember, UndefinedType, UndefinedInterface, UndefinedStruct
 from grease.core.stack import Stack
-from grease.core.substruct import SubstructNodeType
 from grease.semantic_cube import cube
 from sys import byteorder
 
@@ -49,6 +48,7 @@ class Greaser:
     self._jump_stack = Stack()
     self._agregate_stack = Stack()
     self._quads = QuadrupleStore()
+    self._last_substruct = None
     self._next_local_address = 0
     self._next_global_address = 0
     self._active_fn = None
@@ -149,6 +149,9 @@ class Greaser:
   def check_top_operator(self, operators):
     if self._operator_stack.peek() in operators:
       self.make_expression()
+
+  def top_operand_type(self):
+    return self._operand_stack.peek().type 
   
   def push_operand(self, operand):
     self._operand_stack.push(operand)
@@ -198,7 +201,7 @@ class Greaser:
     self._operand_stack.push(GreaseVar(t,cnst,AddressingMethod.Literal))
 
   def push_substruct(self, name):
-    make_operand()
+    self.make_operand()
     self._last_substruct = name
 
   def make_operand(self):
@@ -214,7 +217,7 @@ class Greaser:
       
       self.make_offset(var.type)
     else:
-      var = find_variable(self._last_substruct)
+      var = self.find_variable(self._last_substruct)
 
   def make_offset(self, var_type):
     self.push_operator(Operation.PLUS)
