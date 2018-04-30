@@ -54,6 +54,10 @@ class Greaser:
     self._active_fn = None
     self._next_param = 0
     self._dim = 0
+    self._k = 0
+    self._r = 0
+    self._lim_inf = 0
+    self._lim_sup = 0
 
   def find_function(self, name):
     fn = self._global_fns.find_function(name)
@@ -169,6 +173,34 @@ class Greaser:
       self._operator_stack.push(Operation.PLUS)
       self.make_expression()
   
+  def add_dim(self):
+    self._dim = self._dim + 1
+    #actualizar DIM EN PILADIMENSIONADAS
+
+
+  def set_arr_add(self):
+    arr = self._agregate_stack.peek()
+
+    aux1 = self._operand_stack.pop()
+    t = self._operand_stack.peek()
+    #obtener el valor de k
+    quad = Quadruple(Operation.PLUS , aux1.address, k.address ,t.address)
+    self._quads.push_quad(quad)
+    #obtener el valor de BASE
+    quad2 = Quadruple(Operation.PLUS , t.address, BASE.address ,t.address)
+    self._quads.push_quad(quad2)
+    self._operand_stack.push(t.address)
+    self._agregate_stack.pop()
+    self.make_expression()
+
+  def push_declare_array_stack(self, dimens):
+    for self._dim in dimens:
+      SUM = SUM + 0
+      self._dim = self._dim + 1 # confusión
+    
+    self._k = SUM * -1 #almacenar -k
+    dirBase = dirBase + aux #aux se queda con el tamaño total
+
   def push_constant(self, cnst):
     # TODO: Identify types
     t = GreaseType(GreaseTypeClass.Int)
