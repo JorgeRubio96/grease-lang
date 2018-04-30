@@ -29,6 +29,7 @@ class Operation(Enum):
   GOSUB = 23
   ADDR = 24
   VER = 25
+  ACCESS = 26
 
 class Quadruple(object):
   def __init__(self, operation, lhs=None, rhs=None, result=None):

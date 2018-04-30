@@ -1,5 +1,5 @@
 from grease.core.struct import GreaseStruct
-from grease.core.variable import GreaseVar
+from grease.core.variable import GreaseVar, AddressingMethod
 from grease.core.type import GreaseTypeClass, GreaseType
 from grease.core.function import GreaseFn
 from grease.core.quadruple import Quadruple, QuadrupleStore, Operation
@@ -15,10 +15,10 @@ from grease.semantic_cube import cube
 from sys import byteorder
 
 type_class_dict = {
-  'Int': GreaseTypeClass.Int,
+  'Int'  : GreaseTypeClass.Int,
   'Float': GreaseTypeClass.Float,
-  'Char': GreaseTypeClass.Char,
-  'Bool': GreaseTypeClass.Bool,
+  'Char' : GreaseTypeClass.Char,
+  'Bool' : GreaseTypeClass.Bool,
 }
 
 operators_dict = {
@@ -49,8 +49,10 @@ class Greaser:
     self._jump_stack = Stack()
     self._agregate_stack = Stack()
     self._quads = QuadrupleStore()
-    self._next_local_address = 0x3000000000000000
-    self._next_global_address = 0x0000000000000000
+    self._next_local_address = 0
+    self._next_global_address = 0
+    self._active_fn = None
+    self._next_param = 0
     self._dim = 0
     self._k = 0
     self._r = 0
@@ -104,10 +106,12 @@ class Greaser:
 
   def add_variable(self, name, var):
     if self._scope is self._global_vars:
-      var.address = self._next_global_address
+      var._address = self._next_global_address
+      var.method = AddressingMethod.Relative
       self._next_global_address += var.type.size
     else:
-      var.address = self._next_local_address
+      var._address = self._next_local_address
+      var.method = AddressingMethod.Direct
       self._next_local_address += var.type.size
 
     self._scope.add_variable(name,var)
@@ -139,9 +143,6 @@ class Greaser:
     if self._operand_stack.pop() is not '(':
       raise GreaseError("Not Fake bottom")
 
-  def top_operand_type(self):
-    return self._operand_stack.peek().type
-
   def push_operator(self, operator):
     self._operator_stack.push(operator)
 
@@ -159,7 +160,7 @@ class Greaser:
     self._agregate_stack.push(arr)
     self.push_fake_bottom()
     self._dim = 0
-    
+
   def push_dim_stack(self):
     arr = self._agregate_stack.peek()
     if len(arr.type.dimens) > self._dim : #if the next pointer is different from null then
@@ -192,7 +193,6 @@ class Greaser:
     self._agregate_stack.pop()
     self.make_expression()
 
-
   def push_declare_array_stack(self, dimens):
     for self._dim in dimens:
       SUM = SUM + 0
@@ -201,16 +201,41 @@ class Greaser:
     self._k = SUM * -1 #almacenar -k
     dirBase = dirBase + aux #aux se queda con el tamaño total
 
-
-
   def push_constant(self, cnst):
+    # TODO: Identify types
     t = GreaseType(GreaseTypeClass.Int)
-    self._operand_stack.push(GreaseVar(t,0X2000000000000000 + cnst))
+    self._operand_stack.push(GreaseVar(t,cnst,AddressingMethod.Literal))
+
+  def push_substruct(self, name):
+    make_operand()
+    self._last_substruct = name
+
+  def make_operand(self):
+    if self._operator_stack.peek() is Operation.ACCESS:
+      self._operator_stack.pop()
+      parent = self._operand_stack.pop()
+      
+      if parent.type.type_class is not GreaseTypeClass.Struct:
+        raise UndefinedVariable(self._last_substruct)
+
+      var = parent.type.type_data.variables.find_variable(self._last_substruct)
+      parent_addr = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AccessMethod.Literal)
+      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AccessMethod.Literal)
+      
+      self.push_operand(offset)
+      self.push_operator(Operation.PLUS)
+      self.make_expression()
+
+      res = self._operand_stack.peek()
+      res.method = AccessMethod.INDIRECT
+      res.type = GreaseType(GreaseTypeClass.Pointer, var.type)
+    else:
+      var = find_variable(self._last_substruct)
 
   def make_jump(self, to_stack=False):
     if to_stack:
       to = self._jump_stack.pop()
-      quad = Quadruple(Operation.JMP, result=0X2000000000000000 + to)
+      quad = Quadruple(Operation.JMP, result=AddressingMethod.Literal | to)
     else:
       self._jump_stack.push(self._quads.next_free_quad)
       quad = Quadruple(Operation.JMP)
@@ -231,9 +256,26 @@ class Greaser:
 
     if quad_no is not None:
       next_quad = self._quads.next_free_quad
-      self._quads.fill_quad(quad_no, 0X2000000000000000 + next_quad + offset)
+      self._quads.fill_quad(quad_no, AddressingMethod.Literal | (next_quad + offset))
     else:
       raise GreaseError('No jumps pending to be resolved')
+
+  def make_fn_call(self, fn):
+    era = Quadruple(Operation.ERA, fn.size)
+    self._quads.push_quad(era)
+    self._active_fn = fn
+    self._next_param = 0
+
+  def make_param(self):
+    arg = self._operand_stack.pop()
+    param = self._active_fn.params[self._next_param]
+
+    if not Greaser.can_assign(arg.type, param.type):
+      raise TypeMismatch('Found {} but expected {} in arg {}'.format(arg, param, self._next_param))
+
+    param_quad = Quadruple(Operation.PARAM, arg.address, result=self._next_param)
+    
+    self._quads.push_quad(param_quad)
 
   #Exp quad helper
   def make_expression(self):
@@ -250,7 +292,7 @@ class Greaser:
       raise TypeMismatch('{} {} {}'.format(lhs, op, rhs))
 
     tmp_type = GreaseType(return_type_class)
-    tmp_var = GreaseVar(tmp_type, self._next_local_address)
+    tmp_var = GreaseVar(tmp_type, self._next_local_address, AddressingMethod.Relative)
 
     self._next_local_address += 1
 
@@ -280,7 +322,7 @@ class Greaser:
     main = self.find_function('main')
     jump_to_main = self._jump_stack.pop()
 
-    self._quads.fill_quad(jump_to_main, 0X2000000000000000 + main.start)
+    self._quads.fill_quad(jump_to_main, AddressingMethod.Literal | main.start)
     self._quads.push_quad(Quadruple(Operation.HALT))
 
   def print_stacks(self):
@@ -298,7 +340,7 @@ class Greaser:
     self._jump_stack.pprint()
 
   def reset_local_address(self):
-    self._next_local_address = 0x3000000000000000
+    self._next_local_address = 0
 
   def write_to_file(self, name):
     out_file = open(name, 'wb')
@@ -313,3 +355,29 @@ class Greaser:
   def operator_from_text(text):
     return operators_dict.get(text)
 
+  @staticmethod
+  def can_assign(type_l, type_r):
+    if type_l.type_class is GreaseTypeClass.Array:
+      # ArraysTypes cannot be assigned
+      return False
+
+    elif type_l.type_class is GreaseTypeClass.Struct:
+      # StructTypes have struct variable in type_data
+      return type_l.type_data is type_r.type_data
+
+    elif type_l.type_class is GreaseTypeClass.Interface:
+      # InterfaceTypes may be assigned an interface of the same type
+      # or a struct that satisfies that interface
+      if type_r.type_class is GreaseTypeClass.Interface:
+        # InterfaceTypes have interface variable in type_data
+        return type_l.type_data is type_r.type_data
+
+      # Second type is struct. Check if it satisfies interface
+      return type_r.type_data.has_interface(type_l.type_data)
+
+    elif type_l.type_class is GreaseTypeClass.Pointer:
+      # PointerTypes have type variable in type_data
+      return Greaser.can_assign(type_l.type_data, type_r.type_data)
+
+    # All other type_classes may be assigned to themselves
+    return type_l.type_class is type_r.type_class

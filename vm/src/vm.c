@@ -11,6 +11,7 @@
 #define INDIRECT 0x1000000000000000
 #define LITERAL  0X2000000000000000
 #define RELATIVE 0X3000000000000000
+#define PARAM    0x4000000000000000
 #define INT      0x0000000000000000
 #define FLOAT    0x0100000000000000
 #define CHAR     0x0200000000000000
@@ -43,6 +44,7 @@
 #define PARAM    22
 #define GOSUB    23
 #define ADDR     24 //recibe direccion relativa, regresa direccion absoluta
+#define VER      25
 
 
 /* program counter */
@@ -77,7 +79,9 @@ uint64_t decode( uint64_t code )
   case LITERAL:
     return code & CONTENT;
   case RELATIVE:
-    return mem[sp + ( code & CONTENT)];
+    return mem[sp - ( code & CONTENT)];
+  case PARAM:
+    return mem[sp + (code & CONTENT)];
   default:
      printf("Error! in decode");
      halt();
@@ -90,16 +94,16 @@ uint64_t decode( uint64_t code )
 void fetch()
 {
   instrNum = mem[ pc++ ];
-  reg1 = decode(mem[ pc++ ]);
-  reg2 = decode(mem[ pc++ ]);
-  reg3 = decode(mem[ pc++ ]);
+  reg1 = mem[ pc++ ];
+  reg2 = mem[ pc++ ];
+  reg3 = mem[ pc++ ];
 }
 
 /* Eval funcs */
 
 void times( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -134,8 +138,8 @@ void times( void ) {
 }
 
 void divide( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -170,8 +174,8 @@ void divide( void ) {
 }
 
 void add( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -206,8 +210,8 @@ void add( void ) {
 }
 
 void reduct( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -242,8 +246,8 @@ void reduct( void ) {
 }
 
 void equals( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -328,8 +332,8 @@ void equals( void ) {
 }
 
 void greaterThan( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -414,8 +418,8 @@ void greaterThan( void ) {
 }
 
 void greaterEqual( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -500,8 +504,8 @@ void greaterEqual( void ) {
 }
 
 void lessEqual( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -586,8 +590,8 @@ void lessEqual( void ) {
 }
 
 void lessThan( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -672,7 +676,7 @@ void lessThan( void ) {
 }
 
 void not( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
   switch(reg1 & TYPE) {
   case INT:
     mem[reg3] = (uint64_t) ((int) !lhs);
@@ -693,7 +697,7 @@ void not( void ) {
 }
 
 void assign( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
   switch(reg1 & TYPE) {
   case INT:
     mem[reg3] = (uint64_t) ((int) lhs);
@@ -714,7 +718,7 @@ void assign( void ) {
 }
 
 void uMinus( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
   switch(reg1 & TYPE) {
   case INT:
     mem[reg3] = (uint64_t) ((int) -lhs);
@@ -735,8 +739,8 @@ void uMinus( void ) {
 }
 
 void and( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -821,8 +825,8 @@ void and( void ) {
 }
 
 void or( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
-  uint64_t rhs = (reg2 & CONTENT);
+  uint64_t lhs = decode(reg1);
+  uint64_t rhs = decode(reg2);
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
@@ -907,7 +911,7 @@ void or( void ) {
 }
 
 void jmpF( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
   if (!lhs)
   {
     pc = (reg3 & CONTENT) * 4;	
@@ -919,7 +923,7 @@ void jmp( void ){
 }
 
 void print_( void ){
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
   printf("Grease Output:\n");
   switch(reg1 & TYPE){
     case INT:
@@ -941,7 +945,7 @@ void print_( void ){
 }
 
 void scan_( void ){
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
   printf("Grease Input: ");
   switch(reg1 & TYPE){
     case INT:
@@ -967,7 +971,7 @@ void scan_( void ){
 }
 
 void return_( void ){
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
   switch(reg1 & TYPE) {
   case INT:
     mem[return_reg] = ((int) lhs);
@@ -991,27 +995,27 @@ void return_( void ){
 }
 
 void era( void ){
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
   uint64_t fp = sp;                 // Save last sp
   sp += lhs;
   mem[sp - 1] = fp;
 }
 
 void param( void ) {
-  uint64_t lhs = (reg1 & CONTENT);
+  uint64_t lhs = decode(reg1);
 
   switch(reg1 & TYPE) {
   case INT:
-    mem[reg3] = (uint64_t) ((int) lhs);
+    mem[reg3 & CONTENT] = (uint64_t) ((int) lhs);
     break;
   case FLOAT:
-    mem[reg3] = (uint64_t) ((float) lhs);
+    mem[reg3 & CONTENT] = (uint64_t) ((float) lhs);
     break;
   case CHAR:
-    mem[reg3] = (uint64_t) ((char) lhs);
+    mem[reg3 & CONTENT] = (uint64_t) ((char) lhs);
     break;
   case BOOL:
-    mem[reg3] = (uint64_t)((bool) lhs);
+    mem[reg3 & CONTENT] = (uint64_t)((bool) lhs);
     break;
   default:
       printf("Error!! in param");
