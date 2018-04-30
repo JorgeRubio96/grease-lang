@@ -569,7 +569,7 @@ def p_value(p):
 
 def p_np_push_substruct(p):
   '''np_push_substruct : '''
-  push_substruct()
+  greaser.make_operand()
 
 def p_fn_call(p):
   '''fn_call : sub_struct np_fn_name OPEN_PAREN optional_arguments CLOSE_PAREN'''
@@ -611,15 +611,11 @@ def p_optional_pointer_op(p):
 
 def p_sub_struct_body(p):
   '''sub_struct_body : ID np_found_id optional_sub_index'''
-  p[0] = p[1]
+  pass
 
 def p_np_found_id(p):
   '''np_found_id : '''
-  global last_id
-  if last_id is not None:
-    var = greaser.find_variable
-  last_id = p[-1]
-  greaser.push_id(p[-1])
+  greaser._substruct_stack(p[-1])
 
 def p_optional_sub_index(p):
     '''optional_sub_index : OPEN_BRACK np_found_array expression np_dim_exp more_sub_index CLOSE_BRACK np_arr_add
