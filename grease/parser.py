@@ -648,7 +648,6 @@ def p_np_dim_exp(p):
 
 def p_np_next_sub_index(p):
   '''np_next_sub_index : '''
-  #TODO: Calculate subindex address
   greaser.add_dim() 
 
 def p_np_arr_add(p):
