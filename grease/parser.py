@@ -640,6 +640,7 @@ def p_np_found_array(p):
   greaser.push_agregate_stack() #verifies in the var table, and check is type array
 
 def p_np_generate_address_array(p):
+  '''np_generate_address_array : '''
   greaser.generate_address_arr()
 
 def p_np_dim_exp(p):

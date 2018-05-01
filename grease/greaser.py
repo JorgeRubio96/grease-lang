@@ -227,7 +227,7 @@ class Greaser:
       
       self.make_offset(var.type)
     else:
-      var = find_variable(self._last_substruct)
+      var = self.find_variable(self._last_substruct)
       self.push_operand(var)
 
   def make_deref(self):
