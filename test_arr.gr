@@ -2,7 +2,7 @@ var a : Int
 var b = 2
 var c = 3
 var d = 8
-var testArr : [Int ; c + d]
+var testArr : [Int ; 3, 8]
 
 fn main() : Int
 	

@@ -338,7 +338,7 @@ def p_array(p):
   p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens, total_size)
 
 def p_array_more_dimens(p):
-  '''array_more_dimens : array_more_dimens COMMA CONST_INT np_arr_add
+  '''array_more_dimens : array_more_dimens COMMA CONST_INT
                        | empty'''
   if len(p) > 2:
     p[0] = [GreaseDimension(p[3])] + p[1]
@@ -637,15 +637,16 @@ def p_more_sub_index(p):
 
 def p_np_found_array(p):
   '''np_found_array : '''
+  print('Found array!')
   greaser.push_agregate_stack() #verifies in the var table, and check is type array
-
-def p_np_generate_address_array(p):
-  '''np_generate_address_array : '''
-  greaser.generate_address_arr()
 
 def p_np_dim_exp(p):
   '''np_dim_exp : '''
-  greaser.push_dim_stack() #generates Quad
+  try:
+    greaser.push_dim_stack() #generates Quad
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_np_next_sub_index(p):
   '''np_next_sub_index : '''

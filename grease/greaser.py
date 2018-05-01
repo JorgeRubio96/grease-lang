@@ -54,10 +54,6 @@ class Greaser:
     self._active_fn = None
     self._next_param = 0
     self._dim = 0
-    self._k = 0
-    self._r = 0
-    self._lim_inf = 0
-    self._lim_sup = 0
 
   def find_function(self, name):
     fn = self._global_fns.find_function(name)
@@ -158,6 +154,7 @@ class Greaser:
 
   def push_agregate_stack(self):
     arr = self._operand_stack.pop()
+    print(arr)
     if arr.type.type_class is not GreaseTypeClass.Array:
       raise TypeMismatch("Operand is not array.")
     self._agregate_stack.push(arr)
@@ -192,7 +189,7 @@ class Greaser:
   def make_addr(self):
     aux = self._operand_stack.pop()
     temp = GreaseVar(GreaseType(GreaseTypeClass.Int), self._next_local_address, AddressingMethod.Relative)
-    qued = Quadruple(Operation.ADDR, aux.address, result=temp)
+    quad = Quadruple(Operation.ADDR, aux.address, result=temp)
     self._next_local_address += 1
 
   def push_constant(self, cnst):
