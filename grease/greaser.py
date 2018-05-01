@@ -54,10 +54,6 @@ class Greaser:
     self._active_fn = None
     self._next_param = 0
     self._dim = 0
-    self._k = 0
-    self._r = 0
-    self._lim_inf = 0
-    self._lim_sup = 0
 
   def find_function(self, name):
     fn = self._global_fns.find_function(name)
@@ -107,11 +103,11 @@ class Greaser:
   def add_variable(self, name, var):
     if self._scope is self._global_vars:
       var._address = self._next_global_address
-      var.method = AddressingMethod.Relative
+      var.method = AddressingMethod.Direct
       self._next_global_address += var.type.size
     else:
       var._address = self._next_local_address
-      var.method = AddressingMethod.Direct
+      var.method = AddressingMethod.Relative
       self._next_local_address += var.type.size
 
     self._scope.add_variable(name,var)
@@ -137,10 +133,10 @@ class Greaser:
     self._scope = self._scope.parent
 
   def push_fake_bottom(self):
-    self._operand_stack.push('(')
+    self._operator_stack.push('(')
 
   def pop_fake_bottom(self):
-    if self._operand_stack.pop() is not '(':
+    if self._operator_stack.pop() is not '(':
       raise GreaseError("Not Fake bottom")
 
   def push_operator(self, operator):
@@ -157,6 +153,7 @@ class Greaser:
     self._operand_stack.push(operand)
 
   def push_agregate_stack(self):
+    self.make_operand()
     arr = self._operand_stack.pop()
     if arr.type.type_class is not GreaseTypeClass.Array:
       raise TypeMismatch("Operand is not array.")
@@ -169,10 +166,12 @@ class Greaser:
     arr = self._agregate_stack.peek()
     if len(arr.type.dimens) > self._dim : #if the next pointer is different from null then
       t = self._operand_stack.peek()
-      ver = Quadruple(Operation.VER, t.address, arr.type.dimens[self._dim].size)
-      self._operator_stack.push(Operation.TIMES)
-      offset = GreaseVar(GreaseType(GreaseType.Int), arr.type.dimens[self._dim].offset, AccessMethod.Literal)
-      self._operand_stack.push(offset.address)
+      size = GreaseVar(GreaseType(GreaseTypeClass.Int), arr.type.dimens[self._dim].size, AddressingMethod.Literal)
+      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), arr.type.dimens[self._dim].offset, AddressingMethod.Literal)
+      ver = Quadruple(Operation.VER, t.address, size.address)
+      self._quads.push_quad(ver)
+      self.push_operator(Operation.TIMES)
+      self.push_operand(offset)
       self.make_expression()
     if self._dim > 0:
       self._operator_stack.push(Operation.PLUS)
@@ -186,13 +185,15 @@ class Greaser:
     arr = self._agregate_stack.pop()
     self._operand_stack.push(arr)
     self.make_addr()
-    self.make_offset(arr.type_data)
+    self.make_offset(arr.type.type_data)
     self.pop_fake_bottom()
 
   def make_addr(self):
     aux = self._operand_stack.pop()
     temp = GreaseVar(GreaseType(GreaseTypeClass.Int), self._next_local_address, AddressingMethod.Relative)
-    qued = Quadruple(Operation.ADDR, aux.address, result=temp)
+    quad = Quadruple(Operation.ADDR, aux.address, result=temp.address)
+    self._quads.push_quad(quad)
+    self.push_operand(temp)
     self._next_local_address += 1
 
   def push_constant(self, cnst):
@@ -205,6 +206,9 @@ class Greaser:
     self._last_substruct = name
 
   def make_operand(self):
+    if self._last_substruct is None:
+      return
+
     if self._operator_stack.peek() is Operation.DEREF:
       self._operator_stack.pop() # This operation can not be executed by VM
       self.make_deref()
@@ -222,7 +226,7 @@ class Greaser:
         raise UndefinedMember(self._last_substruct)
       
       self.make_addr()
-      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AccessMethod.Literal)
+      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AddressingMethod.Literal)
       self.push_operand(offset)
       
       self.make_offset(var.type)
@@ -230,19 +234,21 @@ class Greaser:
       var = self.find_variable(self._last_substruct)
       self.push_operand(var)
 
+    self._last_substruct = None
+
   def make_deref(self):
     pointer = self._operand_stack.pop()
 
     if pointer.type.type_class is not GreaseTypeClass.Pointer:
       raise TypeMismatch('Expression is not a pointer')
 
-    if pointer.method is AccessMethod.Indirect:
-      temp = GreaseVar(pointer.type_data, self._next_local_address, AccessMethod.Indirect)
+    if pointer.method is AddressingMethod.Indirect:
+      temp = GreaseVar(pointer.type_data, self._next_local_address, AddressingMethod.Indirect)
       self._next_local_address += temp.type.size
 
-      self._quads.push_quad(Operation.EQ, pointer, result=temp)
+      self._quads.push_quad(Quadruple(Operation.EQ, pointer, result=temp))
     else:
-      temp = GreaseVar(pointer.type_data, pointer._address, AccessMethod.Indirect)
+      temp = GreaseVar(pointer.type_data, pointer._address, AddressingMethod.Indirect)
     
     self.push_operand(temp)
 
@@ -250,7 +256,7 @@ class Greaser:
     self.push_operator(Operation.PLUS)
     self.make_expression()
     res = self._operand_stack.peek()
-    res.method = AccessMethod.INDIRECT
+    res.method = AddressingMethod.Indirect
     res.type = GreaseType(GreaseTypeClass.Pointer, var_type)
 
   def make_jump(self, to_stack=False):
@@ -294,7 +300,7 @@ class Greaser:
     if not Greaser.can_assign(arg.type, param.type):
       raise TypeMismatch('Found {} but expected {} in arg {}'.format(arg, param, self._next_param))
 
-    param_quad = Quadruple(Operation.PARAM, arg.address, result=self._next_param)
+    param_quad = Quadruple(Operation.PARAM, arg.address, result=AddressingMethod.Literal | self._next_param)
     
     self._quads.push_quad(param_quad)
 
@@ -327,12 +333,15 @@ class Greaser:
   def make_assign(self):
     expr = self._operand_stack.pop()
     var = self._operand_stack.pop()
-    if var.type.type_class is not expr.type.type_class:
-      raise TypeMismatch('')
-    op = self._operator_stack.pop()
+    
+    if var.method is AddressingMethod.Indirect:
+      if not self.can_assign(var.type.type_data, expr.type):
+        raise TypeMismatch('Expression can not be assigned')
+    elif not self.can_assign(var.type, expr.type):
+      raise TypeMismatch('Expression can not be assigned')
 
     #generate quad and push it to the list
-    self._quads.push_quad(Quadruple(op, lhs=expr.address, result=var.address))
+    self._quads.push_quad(Quadruple(Operation.ASSIGN, expr.address, result=var.address))
 
   def make_io(self, operator):
     expr = self._operand_stack.pop()

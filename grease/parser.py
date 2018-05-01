@@ -105,7 +105,6 @@ def p_variable(p):
     expr = greaser._operand_stack.pop()
     greaser.push_operand(v)
     greaser.push_operand(expr)
-    greaser.push_operator(Operation.ASSIGN)
     greaser.make_assign()
     declaration_assignment = False
 
@@ -336,13 +335,13 @@ def p_array(p):
   total_size = r
 
   for dimen in dimens:
-    dimen.offset = r / dimen.size
+    dimen.offset = int(r / dimen.size)
     r = dimen.offset
   
   p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens, total_size)
 
 def p_array_more_dimens(p):
-  '''array_more_dimens : array_more_dimens COMMA CONST_INT np_arr_add
+  '''array_more_dimens : array_more_dimens COMMA CONST_INT
                        | empty'''
   if len(p) > 2:
     p[0] = [GreaseDimension(p[3])] + p[1]
@@ -378,12 +377,12 @@ def p_statement_body(p):
   pass
 
 def p_assignment(p):
-  '''assignment : sub_struct EQUALS np_push_assignment expression'''
-  greaser.make_assign()
-
-def p_np_push_assignment(p):
-  '''np_push_assignment : '''
-  greaser.push_operator(Operation.ASSIGN)
+  '''assignment : sub_struct EQUALS expression'''
+  try:
+    greaser.make_assign()
+  except GreaseError as e:
+    e.print(p.lineno(1))
+    raise
 
 def p_condition(p):
   '''condition : IF expression np_condition COLON NEW_LINE block optional_else'''
@@ -439,7 +438,7 @@ def p_print(p):
   greaser.make_io(Operation.PRINT)
 
 def p_scan(p):
-  '''scan : SCAN sub_struct'''
+  '''scan : SCAN sub_struct np_push_substruct'''
   greaser.make_io(Operation.SCAN)
 
 def p_expression(p):
@@ -670,7 +669,6 @@ def p_np_found_array(p):
   except GreaseError as e:
     e.print(p.lineno(0))
     raise
-
 
 def p_np_dim_exp(p):
   '''np_dim_exp : '''
