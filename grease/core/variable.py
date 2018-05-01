@@ -15,6 +15,8 @@ addr_type = {
   GreaseTypeClass.Bool : 0x0300000000000000
 }
 
+other_type = 0x0400000000000000
+
 class GreaseVar:
   def __init__(self, grease_type, address, method=AddressingMethod.Direct):
     self.type = grease_type
@@ -29,7 +31,7 @@ class GreaseVar:
   
   @property
   def address(self):
-    return self.method | addr_type[self.type.type_class] | self._address
+    return self.method | addr_type.get(self.type.type_class, other_type) | self._address
 
 class GreaseVarBuilder:
   def __init__(self):
