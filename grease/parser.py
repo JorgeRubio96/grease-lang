@@ -264,7 +264,11 @@ def p_interface(p):
 
 def p_np_insert_interface(p):
   '''np_insert_interface : '''
-  greaser.add_interface(p[-1], GreaseInterface())
+  try:
+    greaser.add_interface(p[-1], GreaseInterface())
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_interface_error(p):
   '''interface : INTERFACE ID error'''
@@ -387,7 +391,11 @@ def p_condition(p):
 
 def p_np_condition(p):
   '''np_condition : '''
-  greaser.make_jump_f()
+  try:
+    greaser.make_jump_f()
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
   
 
 def p_optional_else(p):
@@ -398,8 +406,12 @@ def p_optional_else(p):
 
 def p_np_found_else(p):
   '''np_found_else : '''
-  greaser.fill_jump(1)
-  greaser.make_jump()
+  try:
+    greaser.fill_jump(1)
+    greaser.make_jump()
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_cycle(p):
   '''cycle : WHILE np_begin_cycle expression np_cycle COLON NEW_LINE block '''
@@ -408,11 +420,19 @@ def p_cycle(p):
 
 def p_np_begin_cycle(p):
   '''np_begin_cycle : '''
-  greaser.push_jmp()
+  try:
+    greaser.push_jmp()
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_np_cycle(p):
   '''np_cycle : '''
-  greaser.make_jump_f()
+  try:
+    greaser.make_jump_f()
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_print(p):
   '''print : PRINT expression'''
@@ -577,7 +597,11 @@ def p_value(p):
 
 def p_np_push_substruct(p):
   '''np_push_substruct : '''
-  greaser.make_operand()
+  try:
+    greaser.make_operand()
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_fn_call(p):
   '''fn_call : sub_struct np_fn_name OPEN_PAREN optional_arguments CLOSE_PAREN'''
@@ -623,7 +647,11 @@ def p_sub_struct_body(p):
 
 def p_np_found_id(p):
   '''np_found_id : '''
-  greaser.push_substruct(p[-1])
+  try:
+    greaser.push_substruct(p[-1])
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_optional_sub_index(p):
     '''optional_sub_index : OPEN_BRACK np_found_array expression np_dim_exp more_sub_index CLOSE_BRACK np_arr_add
@@ -637,23 +665,37 @@ def p_more_sub_index(p):
 
 def p_np_found_array(p):
   '''np_found_array : '''
-  greaser.push_agregate_stack() #verifies in the var table, and check is type array
+  try:
+    greaser.push_agregate_stack() #verifies in the var table, and check is type array
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
-def p_np_generate_address_array(p):
-  '''np_generate_address_array : '''
-  greaser.generate_address_arr()
 
 def p_np_dim_exp(p):
   '''np_dim_exp : '''
-  greaser.push_dim_stack() #generates Quad
+  try:
+    greaser.push_dim_stack() #generates Quad
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_np_next_sub_index(p):
   '''np_next_sub_index : '''
-  greaser.add_dim() 
+  try:
+    greaser.add_dim()  #generates Quad
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
 
 def p_np_arr_add(p):
   '''np_arr_add : '''
-  greaser.set_arr_add()
+  try:
+    greaser.set_arr_add()
+  except GreaseError as e:
+    e.print(p.lineno(0))
+    raise
+
 
 def p_more_sub_struct(p):
   '''more_sub_struct : more_sub_struct sub_struct_operator sub_struct_body

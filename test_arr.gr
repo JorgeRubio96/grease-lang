@@ -2,12 +2,10 @@ var a : Int
 var b = 2
 var c = 3
 var d = 8
-var testArr : [Int ; c + d]
+var testArr : [Int ; 5]
 
 fn main() : Int
-	
 	a = b / 2 * 3
-
 	testArr[d - b] = b + a
 	print testArr[0]
 	return 0
