@@ -1,0 +1,39 @@
+var a : Int
+var i = 0
+int b = 0
+
+fn fibo_r(n : Int) : Int
+	if n eq 0 or n eq 1 :
+		return 1
+	else :
+		return fibo_r(n - 2) + fibo_r(n - 1)
+
+fn fibo_w(n : Int) : Int
+	var actual : Int
+	var prev = 1
+	var prevPrevVal = -1
+
+	while b lt n:
+		actual = prev + prevPrevVal
+		prev = prevPrevVal
+		prevPrevVal = actual
+		print actual
+		print ','
+		b = b + 1
+
+	return actual
+
+
+fn main() : Int
+	print 'Ingresa numero para fibonacci \n'
+	scan a
+
+	while i lt a :
+		if fibo_r(a) not 0:
+			print ", "
+		print fibo(a)
+		i = i + 1
+
+	print fibo_w(a)
+
+	return 0
