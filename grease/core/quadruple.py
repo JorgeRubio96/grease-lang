@@ -25,12 +25,12 @@ class Operation(Enum):
   HALT = 19
   RETURN = 20
   ERA = 21
-  PARAM = 22
-  GOSUB = 23
-  ADDR = 24
-  VER = 25
-  ACCESS = 26
-  DEREF = 27
+  GOSUB = 22
+  ADDR = 23
+  VER = 24
+  PARAM = 25
+  ACCESS = 25
+  DEREF = 26
 
 class Quadruple(object):
   def __init__(self, operation, lhs=None, rhs=None, result=None):

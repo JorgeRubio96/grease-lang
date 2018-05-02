@@ -11,11 +11,11 @@
 #define INDIRECT 0x1000000000000000
 #define LITERAL  0X2000000000000000
 #define RELATIVE 0X3000000000000000
-#define PARAM    0x4000000000000000
 #define INT      0x0000000000000000
 #define FLOAT    0x0100000000000000
 #define CHAR     0x0200000000000000
 #define BOOL     0x0300000000000000
+#define POINTER  0x0400000000000000
 #define ACCESS   0xF000000000000000
 #define TYPE     0x0F00000000000000
 #define CONTENT  0x00FFFFFFFFFFFFFF 
@@ -41,11 +41,18 @@
 #define HALT     19
 #define RETURN 	 20
 #define ERA      21
-#define PARAM    22
-#define GOSUB    23
-#define ADDR     24 //recibe direccion relativa, regresa direccion absoluta
-#define VER      25
+#define GOSUB    22
+#define ADDR     23 //recibe direccion relativa, regresa direccion absoluta
+#define VER      24
+#define PARAM    25
 
+typedef union {
+  long i;
+  double f;
+  bool b;
+  char c;
+  uint64_t a;
+} grease_var_t;
 
 /* program counter */
 unsigned int pc = 0;
@@ -57,7 +64,8 @@ uint64_t reg1       = 0;
 uint64_t reg2       = 0;
 uint64_t reg3       = 0;
 uint64_t return_reg = 0;
-uint64_t * mem;
+
+grease_var_t * mem;
 
 /* the VM runs until this flag becomes 0 */
 int running = 1;
@@ -68,50 +76,82 @@ void halt( void ) {
 }
 
 /* decode a code */
-uint64_t decode( uint64_t code )
+grease_var_t decode( uint64_t code )
 {
-
   switch( code & ACCESS ){
   case DIRECT:
     return mem[code & CONTENT];
   case INDIRECT:
-    return mem[mem[code & CONTENT]];
-  case LITERAL:
-    return code & CONTENT;
+    return mem[mem[code & CONTENT].a & CONTENT];
   case RELATIVE:
-    return mem[sp - ( code & CONTENT)];
-  case PARAM:
-    return mem[sp + (code & CONTENT)];
+    return mem[sp - (code & CONTENT)];
+  case LITERAL: {
+    grease_var_t res;
+    uint64_t tmp = code & CONTENT;
+    switch(code & TYPE){
+    case INT:
+      res.i = * (int *) &tmp;
+      return res;
+    case FLOAT:
+      res.f = * (float *) &tmp;
+      return res;
+    case CHAR:
+      res.c = * (char *) &tmp;
+      return res;
+    default:
+      printf("Error! in literal");
+      halt();
+    }
+  }
   default:
-     printf("Error! in decode");
+    printf("Error! in decode");
+    halt();
+  }
+}
+
+/* decode a code */
+void assign(uint64_t code, grease_var_t val )
+{
+  switch( code & ACCESS ){
+  case DIRECT:
+    mem[code & CONTENT] = val;
+  case INDIRECT:
+    mem[mem[code & CONTENT].a & CONTENT] = val;
+  case RELATIVE:
+    mem[sp - (code & CONTENT)] = val;
+  default:
+     printf("Error! in assign");
      halt();
   }
-
-  return 0;
 }
 
 /* fetch the next code from the program */
 void fetch()
 {
-  instrNum = mem[ pc++ ];
-  reg1 = mem[ pc++ ];
-  reg2 = mem[ pc++ ];
-  reg3 = mem[ pc++ ];
+  instrNum = mem[ pc++ ].a;
+  reg1 = mem[ pc++ ].a;
+  reg2 = mem[ pc++ ].a;
+  reg3 = mem[ pc++ ].a;
 }
 
 /* Eval funcs */
 
 void times( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs * (int) rhs);
+      res.i = decode(reg1).i * decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs * (float) rhs);
+      res.f = decode(reg1).i * decode(reg2).f;
+      assign(reg3, res);
+      break;
+    case POINTER:
+      res.a = decode(reg1).i * decode(reg2).a;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in TIMES");
@@ -121,10 +161,27 @@ void times( void ) {
   case FLOAT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((float) lhs * (int) rhs);
+      res.f = decode(reg1).f * decode(reg2).i;
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs * (float) rhs);
+      res.f = decode(reg1).f * decode(reg2).f;
+      assign(reg3, res);
+      break;
+    default:
+      printf("Error!! in TIMES");
+      halt();
+    }
+    break;
+  case POINTER:
+    switch(reg2 & TYPE) {
+    case INT:
+      res.a = reg1 * decode(reg2).i;
+      assign(reg3, res);
+      break;
+    case POINTER:
+      res.a = reg1 * decode(reg2).a;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in TIMES");
@@ -132,22 +189,27 @@ void times( void ) {
     }
     break;
   default:
-    printf("Error!! in TIMES");
+    printf("Error!! in TIMES");	
     halt();
   }
 }
 
 void divide( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs / (int) rhs);
+      res.i = decode(reg1).i / decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs / (float) rhs);
+      res.f = decode(reg1).i / decode(reg2).f;
+      assign(reg3, res);
+      break;
+    case POINTER:
+      res.a = decode(reg1).i / decode(reg2).a;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in DIVIDE");
@@ -157,10 +219,27 @@ void divide( void ) {
   case FLOAT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((float) lhs / (int) rhs);
+      res.f = decode(reg1).f / decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs / (float) rhs);
+      res.f = decode(reg1).f / decode(reg2).f;
+      assign(reg3, res);
+      break;
+    default:
+      printf("Error!! in DIVIDE");
+      halt();
+    }
+    break;
+  case POINTER:
+    switch(reg2 & TYPE) {
+    case INT:
+      res.a = reg1 / decode(reg2).i; 
+      assign(reg3, res);
+      break;
+    case POINTER:
+      res.a = reg1 / decode(reg2).a;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in DIVIDE");
@@ -168,22 +247,27 @@ void divide( void ) {
     }
     break;
   default:
-    printf("Error!! in DIVIDE");
+    printf("Error!! in DIVIDE");	
     halt();
   }
 }
 
 void add( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs + (int) rhs);
+      res.i = decode(reg1).i + decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs + (float) rhs);
+      res.f = decode(reg1).i + decode(reg2).f;
+      assign(reg3, res);
+      break;
+    case POINTER:
+      res.a = decode(reg1).i + decode(reg2).a;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in ADD");
@@ -193,10 +277,27 @@ void add( void ) {
   case FLOAT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((float) lhs + (int) rhs);
+      res.f = decode(reg1).f + decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs + (float) rhs);
+      res.f = decode(reg1).f + decode(reg2).f; 
+      assign(reg3, res);
+      break;
+    default:
+      printf("Error!! in ADD");
+      halt();
+    }
+    break;
+  case POINTER:
+    switch(reg2 & TYPE) {
+    case INT:
+      res.a = reg1 + decode(reg2).i; 
+      assign(reg3, res);
+      break;
+    case POINTER:
+      res.a = reg1 + reg2; 
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in ADD");
@@ -210,58 +311,71 @@ void add( void ) {
 }
 
 void reduct( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs - (int) rhs);
+      res.i = decode(reg1).i - decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs - (float) rhs);
+      res.f = decode(reg1).i - decode(reg2).f;
+      assign(reg3, res);
+      break;
+    case POINTER:
+      res.a = decode(reg1).i - decode(reg2).a;
+      assign(reg3, res);
       break;
     default:
-      printf("Error!! in reduct");
+      printf("Error!! in MINUS");
       halt();
     }
     break;
   case FLOAT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((float) lhs - (int) rhs);
+      res.f = decode(reg1).f - decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs - (float) rhs);
+      res.f = decode(reg1).f - decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
-      printf("Error!! in reduct");
+      printf("Error!! in MINUS");
+      halt();
+    }
+    break;
+  case POINTER:
+    switch(reg2 & TYPE) {
+    case INT:
+      res.a = reg1 - decode(reg2).i; 
+      assign(reg3, res);
+      break;
+    case POINTER:
+      res.a = decode(reg1).a - decode(reg2).a;
+      assign(reg3, res);
+      break;
+    default:
+      printf("Error!! in MINUS");
       halt();
     }
     break;
   default:
-      printf("Error!! in reduct");
-      halt();
+    printf("Error!! in MINUS");	
+    halt();
   }
 }
 
 void equals( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs == (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs == (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((int) lhs == (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((int) lhs == (bool) rhs);
+      res.b = decode(reg1).i == decode(reg2).i; 
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in equals");
@@ -270,17 +384,9 @@ void equals( void ) {
     break;
   case FLOAT:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((float) lhs == (int) rhs);
-      break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs == (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((float) lhs == (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((float) lhs == (bool) rhs);
+      res.b = decode(reg1).f == decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in equals");
@@ -289,17 +395,9 @@ void equals( void ) {
     break;
   case CHAR:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((char) lhs == (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((char) lhs == (float) rhs);
-      break;
     case CHAR:
-      mem[reg3] = (uint64_t) ((char) lhs == (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((char) lhs == (bool) rhs);
+      res.b = decode(reg1).c == decode(reg2).c;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in equals");
@@ -308,17 +406,9 @@ void equals( void ) {
     break;
   case BOOL:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((bool) lhs == (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((bool) lhs == (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((bool) lhs == (char) rhs);
-      break;
     case BOOL:
-      mem[reg3] = (uint64_t) ((bool) lhs == (bool) rhs);
+      res.b = decode(reg1).b == decode(reg2).b;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in equals");
@@ -332,22 +422,17 @@ void equals( void ) {
 }
 
 void greaterThan( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs > (int) rhs);
+      res.b = decode(reg1).i > decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs > (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((int) lhs > (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((int) lhs > (bool) rhs);
+      res.b = decode(reg1).i > decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in gt");
@@ -357,16 +442,12 @@ void greaterThan( void ) {
   case FLOAT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((float) lhs > (int) rhs);
+      res.b = decode(reg1).f > decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs > (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((float) lhs > (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((float) lhs > (bool) rhs);
+      res.b = decode(reg1).f > decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in gt");
@@ -375,36 +456,9 @@ void greaterThan( void ) {
     break;
   case CHAR:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((char) lhs > (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((char) lhs > (float) rhs);
-      break;
     case CHAR:
-      mem[reg3] = (uint64_t) ((char) lhs > (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((char) lhs > (bool) rhs);
-      break;
-    default:
-      printf("Error!! in gt");
-      halt();
-    }
-    break;
-  case BOOL:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((bool) lhs > (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((bool) lhs > (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((bool) lhs > (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((bool) lhs > (bool) rhs);
+      res.b = decode(reg1).c > decode(reg2).c;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in gt");
@@ -418,22 +472,17 @@ void greaterThan( void ) {
 }
 
 void greaterEqual( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs >= (int) rhs);
+      res.b = decode(reg1).i >= decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs >= (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((int) lhs >= (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((int) lhs >= (bool) rhs);
+      res.b = decode(reg1).i >= decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in ge");
@@ -443,16 +492,12 @@ void greaterEqual( void ) {
   case FLOAT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((float) lhs >= (int) rhs);
+      res.b = decode(reg1).f >= decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs >= (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((float) lhs >= (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((float) lhs >= (bool) rhs);
+      res.b = decode(reg1).f >= decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in ge");
@@ -461,36 +506,9 @@ void greaterEqual( void ) {
     break;
   case CHAR:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((char) lhs >= (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((char) lhs >= (float) rhs);
-      break;
     case CHAR:
-      mem[reg3] = (uint64_t) ((char) lhs >= (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((char) lhs >= (bool) rhs);
-      break;
-    default:
-      printf("Error!! in ge");
-      halt();
-    }
-    break;
-  case BOOL:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((bool) lhs >= (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((bool) lhs >= (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((bool) lhs >= (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((bool) lhs >= (bool) rhs);
+      res.b = decode(reg1).c >= decode(reg2).c;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in ge");
@@ -504,22 +522,17 @@ void greaterEqual( void ) {
 }
 
 void lessEqual( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs <= (int) rhs);
+      res.b = decode(reg1).i <= decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs <= (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((int) lhs <= (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((int) lhs <= (bool) rhs);
+      res.b = decode(reg1).i <= decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in le");
@@ -529,16 +542,12 @@ void lessEqual( void ) {
   case FLOAT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((float) lhs <= (int) rhs);
+      res.b = decode(reg1).f <= decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs <= (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((float) lhs <= (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((float) lhs <= (bool) rhs);
+      res.b = decode(reg1).f <= decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in le");
@@ -547,36 +556,9 @@ void lessEqual( void ) {
     break;
   case CHAR:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((char) lhs <= (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((char) lhs <= (float) rhs);
-      break;
     case CHAR:
-      mem[reg3] = (uint64_t) ((char) lhs <= (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((char) lhs <= (bool) rhs);
-      break;
-    default:
-      printf("Error!! in le");
-      halt();
-    }
-    break;
-  case BOOL:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((bool) lhs <= (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((bool) lhs <= (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((bool) lhs <= (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((bool) lhs <= (bool) rhs);
+      res.b = decode(reg1).c <= decode(reg2).c;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in le");
@@ -590,22 +572,17 @@ void lessEqual( void ) {
 }
 
 void lessThan( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((int) lhs < (int) rhs);
+      res.b = decode(reg1).i < decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs < (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((int) lhs < (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((int) lhs < (bool) rhs);
+      res.b = decode(reg1).i < decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in lt");
@@ -615,16 +592,12 @@ void lessThan( void ) {
   case FLOAT:
     switch(reg2 & TYPE) {
     case INT:
-      mem[reg3] = (uint64_t) ((float) lhs < (int) rhs);
+      res.b = decode(reg1).f < decode(reg2).i; 
+      assign(reg3, res);
       break;
     case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs < (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((float) lhs < (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((float) lhs < (bool) rhs);
+      res.b = decode(reg1).f < decode(reg2).f;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in lt");
@@ -633,36 +606,9 @@ void lessThan( void ) {
     break;
   case CHAR:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((char) lhs < (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((char) lhs < (float) rhs);
-      break;
     case CHAR:
-      mem[reg3] = (uint64_t) ((char) lhs < (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((char) lhs < (bool) rhs);
-      break;
-    default:
-      printf("Error!! in lt");
-      halt();
-    }
-    break;
-  case BOOL:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((bool) lhs < (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((bool) lhs < (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((bool) lhs < (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((bool) lhs < (bool) rhs);
+      res.b = decode(reg1).c < decode(reg2).c;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in lt");
@@ -676,19 +622,11 @@ void lessThan( void ) {
 }
 
 void not( void ) {
-  uint64_t lhs = decode(reg1);
+  grease_var_t res;
   switch(reg1 & TYPE) {
-  case INT:
-    mem[reg3] = (uint64_t) ((int) !lhs);
-    break;
-  case FLOAT:
-    mem[reg3] = (uint64_t) ((float) !lhs);
-    break;
-  case CHAR:
-    mem[reg3] = (uint64_t) ((char) !lhs);
-    break;
   case BOOL:
-    mem[reg3] = (uint64_t)((bool) !lhs);
+    res.b = !decode(reg1).b;
+    assign(reg3, res);
     break;
   default:
     printf("Error!! in not");
@@ -696,20 +634,24 @@ void not( void ) {
   }
 }
 
-void assign( void ) {
-  uint64_t lhs = decode(reg1);
+void q_assign( void ) {
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
-    mem[reg3] = (uint64_t) ((int) lhs);
+    res.i = decode(reg1).i;
+    assign(reg3, res);
     break;
   case FLOAT:
-    mem[reg3] = (uint64_t) ((float) lhs);
+    res.f = decode(reg1).f;
+    assign(reg3, res);
     break;
   case CHAR:
-    mem[reg3] = (uint64_t) ((char) lhs);
+    res.c = decode(reg1).c;
+    assign(reg3, res);
     break;
   case BOOL:
-    mem[reg3] = (uint64_t)((bool) lhs);
+    res.b = decode(reg1).b;
+    assign(reg3, res);
     break;
   default:
     printf("Error!! in assign");
@@ -718,19 +660,15 @@ void assign( void ) {
 }
 
 void uMinus( void ) {
-  uint64_t lhs = decode(reg1);
+  grease_var_t res;
   switch(reg1 & TYPE) {
   case INT:
-    mem[reg3] = (uint64_t) ((int) -lhs);
+    res.i = -decode(reg1).i;
+    assign(reg3, res);
     break;
   case FLOAT:
-    mem[reg3] = (uint64_t) ((float) -lhs);
-    break;
-  case CHAR:
-    mem[reg3] = (uint64_t) ((char) -lhs);
-    break;
-  case BOOL:
-    mem[reg3] = (uint64_t)((bool) -lhs);
+    res.f = -decode(reg1).f;
+    assign(reg3, res);
     break;
   default:
     printf("Error!! in uMinus");
@@ -739,79 +677,13 @@ void uMinus( void ) {
 }
 
 void and( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
-  case INT:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((int) lhs && (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs && (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((int) lhs && (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((int) lhs && (bool) rhs);
-      break;
-    default:
-      printf("Error!! in and");
-      halt();
-    }
-    break;
-  case FLOAT:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((float) lhs && (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs && (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((float) lhs && (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((float) lhs && (bool) rhs);
-      break;
-    default:
-      printf("Error!! in and");
-      halt();
-    }
-    break;
-  case CHAR:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((char) lhs && (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((char) lhs && (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((char) lhs && (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((char) lhs && (bool) rhs);
-      break;
-    default:
-      printf("Error!! in and");
-      halt();
-    }
-    break;
   case BOOL:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((bool) lhs && (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((bool) lhs && (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((bool) lhs && (char) rhs);
-      break;
     case BOOL:
-      mem[reg3] = (uint64_t) ((bool) lhs && (bool) rhs);
+      res.b = decode(reg1).b && decode(reg2).b;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in and");
@@ -825,79 +697,13 @@ void and( void ) {
 }
 
 void or( void ) {
-  uint64_t lhs = decode(reg1);
-  uint64_t rhs = decode(reg2);
+  grease_var_t res;
   switch(reg1 & TYPE) {
-  case INT:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((int) lhs || (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((int) lhs || (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((int) lhs || (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((int) lhs || (bool) rhs);
-      break;
-    default:
-      printf("Error!! in or");
-      halt();
-    }
-    break;
-  case FLOAT:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((float) lhs || (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((float) lhs || (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((float) lhs || (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((float) lhs || (bool) rhs);
-      break;
-    default:
-      printf("Error!! in or");
-      halt();
-    }
-    break;
-  case CHAR:
-    switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((char) lhs || (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((char) lhs || (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((char) lhs || (char) rhs);
-      break;
-    case BOOL:
-      mem[reg3] = (uint64_t) ((char) lhs || (bool) rhs);
-      break;
-    default:
-      printf("Error!! in or");
-      halt();
-    }
-    break;
   case BOOL:
     switch(reg2 & TYPE) {
-    case INT:
-      mem[reg3] = (uint64_t) ((bool) lhs || (int) rhs);
-      break;
-    case FLOAT:
-      mem[reg3] = (uint64_t) ((bool) lhs || (float) rhs);
-      break;
-    case CHAR:
-      mem[reg3] = (uint64_t) ((bool) lhs || (char) rhs);
-      break;
     case BOOL:
-      mem[reg3] = (uint64_t) ((bool) lhs || (bool) rhs);
+      res.b = decode(reg1).b || decode(reg2).b;
+      assign(reg3, res);
       break;
     default:
       printf("Error!! in or");
@@ -910,33 +716,31 @@ void or( void ) {
   }
 }
 
+void jmp( void ){
+  pc = decode(reg3).a * 4;
+}
+
 void jmpF( void ) {
-  uint64_t lhs = decode(reg1);
-  if (!lhs)
+  if (!decode(reg1).b)
   {
-    pc = (reg3 & CONTENT) * 4;	
+    jmp();
   }
 }
 
-void jmp( void ){
-  pc = (reg3 & CONTENT) * 4;
-}
-
 void print_( void ){
-  uint64_t lhs = decode(reg1);
   printf("Grease Output:\n");
   switch(reg1 & TYPE){
     case INT:
-      printf("%d\n", ((int) (lhs)) );
+      printf("%ld\n", decode(reg1).i);
       break;
     case FLOAT:
-      printf("%f\n", ((float) (lhs)) );
+      printf("%lf\n", decode(reg1).f);
       break;
     case CHAR:
-      printf("%c\n", ((char) (lhs)) );
+      printf("%c\n", decode(reg1).c);
       break;
     case BOOL:
-      printf("%s\n", ((bool) (lhs)) ? "true" : "false");
+      printf("%s\n", decode(reg1).b ? "true" : "false");
       break;
     default:
       printf("Error!! in print");
@@ -945,24 +749,20 @@ void print_( void ){
 }
 
 void scan_( void ){
-  uint64_t lhs = decode(reg1);
+  grease_var_t buffer;
   printf("Grease Input: ");
   switch(reg1 & TYPE){
     case INT:
-      scanf("%d", (int *) &lhs);
-      mem[sp] = lhs; 
+      scanf("%ld", &buffer.i);
+      assign(reg1, buffer);
       break;
     case FLOAT:
-      scanf("%f", (float *) &lhs);
-      mem[sp] = lhs;
+      scanf("%lf", &buffer.f);
+      assign(reg1, buffer);
       break;
     case CHAR:
-      scanf("%c", (char *) &lhs);
-      mem[sp] = lhs;
-      break;
-    case BOOL:
-      scanf("%d", (int *) &lhs);
-      mem[sp] = lhs;
+      scanf("%c", &buffer.c);
+      assign(reg1, buffer);
       break;
     default:
       printf("Error!! in scan");
@@ -971,63 +771,59 @@ void scan_( void ){
 }
 
 void return_( void ){
-  uint64_t lhs = decode(reg1);
-  switch(reg1 & TYPE) {
-  case INT:
-    mem[return_reg] = ((int) lhs);
-    break;
-  case FLOAT:
-    mem[return_reg] = ((float) lhs);
-    break;
-  case CHAR:
-    mem[return_reg] = ((char) lhs);
-    break;
-  case BOOL:
-    mem[return_reg] = ((bool) lhs);
-    break;
-  default:
-    printf("Error!! in return");
-    halt();
-  }
-
-  pc = mem[sp - 2]; // Location of return addr
-  sp = mem[sp - 1];     // Location of FramePointer
+  mem[return_reg] = decode(reg1);
+  pc = mem[sp - 1].a; // Location of return addr
+  sp = mem[sp].a;     // Location of FramePointer
 }
 
 void era( void ){
-  uint64_t lhs = decode(reg1);
   uint64_t fp = sp;                 // Save last sp
-  sp += lhs;
-  mem[sp - 1] = fp;
-}
-
-void param( void ) {
-  uint64_t lhs = decode(reg1);
-
-  switch(reg1 & TYPE) {
-  case INT:
-    mem[reg3 & CONTENT] = (uint64_t) ((int) lhs);
-    break;
-  case FLOAT:
-    mem[reg3 & CONTENT] = (uint64_t) ((float) lhs);
-    break;
-  case CHAR:
-    mem[reg3 & CONTENT] = (uint64_t) ((char) lhs);
-    break;
-  case BOOL:
-    mem[reg3 & CONTENT] = (uint64_t)((bool) lhs);
-    break;
-  default:
-      printf("Error!! in param");
-      halt();
-  }
+  sp += reg1 & CONTENT;
+  mem[sp].a = fp;
 }
 
 void gosub( void ){
-  mem[sp - 2] = pc;      // Return addr
-  pc = (reg1 & CONTENT) * 4;     // JMP to subroutine
+  mem[sp - 2].a = pc;           // Return addr
+  pc = decode(reg1).a * 4;  // JMP to subroutine
 }
   
+void addr( void ){
+  grease_var_t res;
+  switch(reg1 & ACCESS) {
+  case RELATIVE:
+    res.a = sp - (reg1 & CONTENT);
+    assign(reg3, res);
+    break;
+  case INDIRECT:
+    res.a = mem[reg1 & CONTENT].a;
+    assign(reg3, res);
+    break;
+  case DIRECT:
+    res.a = reg1 & CONTENT;
+    assign(reg3, res);
+  default:
+    printf("Error!! in addr");
+    halt();
+  }
+}
+
+void param( void ){
+  uint64_t fp = mem[sp].a;
+  switch(reg1 & ACCESS) {
+  case DIRECT:
+    assign(reg3, mem[reg1 & CONTENT]);
+    break;
+  case RELATIVE:
+    assign(reg3, mem[fp - (reg1 & CONTENT)]);
+    break;
+  case INDIRECT:
+    assign(reg3, mem[mem[reg1 & CONTENT].a & CONTENT]);
+    break;
+  default:
+    printf("Error!! in param");
+    halt();
+  }
+}
 
 /* evaluate the last decoded instruction */
 void eval()
@@ -1065,7 +861,7 @@ void eval()
       not();
       break;
     case ASSIGN:
-      assign();
+      q_assign();
       break;
     case U_MINUS:
       uMinus();
@@ -1097,12 +893,13 @@ void eval()
     case ERA:
       era();
       break;
-    case PARAM:
-      param();
-      break;
     case GOSUB:
       gosub();
       break;
+    case ADDR:
+      addr();
+    case PARAM:
+      param();
     default:
     printf("Unknown opcode");
     halt();

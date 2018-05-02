@@ -3,7 +3,7 @@ vm: vm.o
 
 vm.o: src/vm.c
 	mkdir -p build
-	gcc -c -Wall -o build/vm.o src/vm.c
+	gcc -c -O3 -Wall -o build/vm.o src/vm.c
 
 clean:
 	rm -rf build

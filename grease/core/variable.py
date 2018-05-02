@@ -9,13 +9,14 @@ class AddressingMethod(IntFlag):
   Param  = 0x4000000000000000
 
 addr_type = {
-  GreaseTypeClass.Int : 0x0000000000000000,
-  GreaseTypeClass.Float : 0x0100000000000000,
-  GreaseTypeClass.Char : 0x0200000000000000,
-  GreaseTypeClass.Bool : 0x0300000000000000
+  GreaseTypeClass.Int     : 0x0000000000000000,
+  GreaseTypeClass.Float   : 0x0100000000000000,
+  GreaseTypeClass.Char    : 0x0200000000000000,
+  GreaseTypeClass.Bool    : 0x0300000000000000,
+  GreaseTypeClass.Pointer : 0x0400000000000000
 }
 
-other_type = 0x0400000000000000
+other_type = 0x0500000000000000
 
 class GreaseVar:
   def __init__(self, grease_type, address, method=AddressingMethod.Direct):

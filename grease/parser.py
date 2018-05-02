@@ -1,14 +1,12 @@
-import sys
 import ply.yacc as yacc
 from grease.scanner import tokens
 from grease.greaser import Greaser
 from grease.core.variable import GreaseVarBuilder
 from grease.core.function import GreaseFnBuilder
-from grease.core.struct import GreaseStructBuilder, GreaseStruct
+from grease.core.struct import GreaseStructBuilder
 from grease.core.interface import GreaseInterface
 from grease.core.exceptions import GreaseError, UndefinedFunction
-from grease.core.quadruple import QuadrupleStore, Quadruple, Operation
-from grease.core.stack import Stack
+from grease.core.quadruple import Quadruple, Operation
 from grease.core.type import GreaseType, GreaseTypeClass
 from grease.core.dimension import GreaseDimension
 
@@ -30,17 +28,22 @@ precedence = (
 )
 
 def p_program(p):
-  '''program : np_jump_to_main optional_imports optional_declarations'''
+  '''program : optional_imports optional_global_variables np_jump_to_main optional_declarations'''
   try:
     greaser.resolve_main()
   except UndefinedFunction as e:
     print('Main is not defined')
   except GreaseError as e:
     e.print(p.lineno(3))
-  
+
   # Debug print
   # TODO: Remove before release
   greaser._quads.print_all()
+
+def p_optional_global_variables(p):
+  '''optional_global_variables : optional_global_variables variable
+                               | empty'''
+  pass
 
 def p_np_jump_to_main(p):
   '''np_jump_to_main : '''
@@ -83,8 +86,7 @@ def p_optional_declarations(p):
   pass
 
 def p_declaration(p):
-  '''declaration : variable
-                 | function
+  '''declaration : function
                  | alias
                  | struct
                  | interface'''
@@ -126,7 +128,8 @@ def p_function(p):
   '''function : FN optional_method_declaration function_id OPEN_PAREN optional_params CLOSE_PAREN optional_return_type np_insert_function NEW_LINE block'''
   # Close the function scope
   greaser.close_scope()
-  greaser.reset_local_address()
+  greaser.push_fn_size()
+  greaser.push_return(with_data=False)
 
 def p_function_id(p):
   '''function_id : ID'''
@@ -370,11 +373,15 @@ def p_statement_body(p):
   '''statement_body : assignment NEW_LINE
                     | print NEW_LINE
                     | scan NEW_LINE
-                    | RETURN expression NEW_LINE
+                    | RETURN expression np_push_return NEW_LINE
                     | fn_call NEW_LINE
                     | condition
                     | cycle'''
   pass
+
+def p_np_push_return(p):
+  '''np_push_return : '''
+  greaser.push_return(with_data=True)
 
 def p_assignment(p):
   '''assignment : sub_struct EQUALS expression'''
@@ -588,11 +595,19 @@ def p_np_check_factor(p):
     e.print(p.lineno(0))
   
 def p_value(p):
-  '''value : OPEN_PAREN expression CLOSE_PAREN
+  '''value : open_paren expression close_paren
            | fn_call
            | const
            | sub_struct np_push_substruct'''
   pass
+
+def p_open_paren(p):
+  '''open_paren : OPEN_PAREN'''
+  greaser.push_fake_bottom()
+
+def p_close_paren(p):
+  '''close_paren : CLOSE_PAREN'''
+  greaser.pop_fake_bottom()
 
 def p_np_push_substruct(p):
   '''np_push_substruct : '''
@@ -604,13 +619,12 @@ def p_np_push_substruct(p):
 
 def p_fn_call(p):
   '''fn_call : sub_struct np_fn_name OPEN_PAREN optional_arguments CLOSE_PAREN'''
-  pass
+  greaser.make_gosub()
 
 def p_np_fn_name(p):
   '''np_fn_name : '''
   try:
-    fn = greaser.find_function(p[1])
-    greaser.push_fn(fn)
+    greaser.make_fn()
   except GreaseError as e:
     e.print(p.lineno(1))
     raise

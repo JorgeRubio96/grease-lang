@@ -1,7 +1,5 @@
-from grease.core.struct import GreaseStruct
 from grease.core.variable import GreaseVar, AddressingMethod
 from grease.core.type import GreaseTypeClass, GreaseType
-from grease.core.function import GreaseFn
 from grease.core.quadruple import Quadruple, QuadrupleStore, Operation
 from grease.core.variable_table import VariableTable
 from grease.core.struct_table import StructTable
@@ -114,10 +112,13 @@ class Greaser:
 
   def add_function(self, name, fn, struct=None):
     fn.start = self._quads.next_free_quad
+    self.reset_local_address(len(fn.param_types))
     if struct is not None:
       struct.functions.add_function(name, fn)
     else:
       self._global_fns.add_function(name, fn)
+
+    self._active_fn = fn
 
   def add_struct(self, name, struct):
     self._structs.add_struct(name, struct)
@@ -132,12 +133,36 @@ class Greaser:
   def close_scope(self):
     self._scope = self._scope.parent
 
-  def push_fake_bottom(self):
-    self._operator_stack.push('(')
-
   def pop_fake_bottom(self):
     if self._operator_stack.pop() is not '(':
       raise GreaseError("Not Fake bottom")
+
+  def push_fake_bottom(self):
+    self._operator_stack.push('(')
+
+  def push_jmp(self):
+    self._jump_stack.push(self._quads.next_free_quad)
+
+  def push_fn_size(self):
+    self._active_fn.size = self._next_local_address - 1
+
+  def push_return(self, with_data=False):
+    return_quad = Quadruple(Operation.RETURN)
+    
+    if with_data:
+      data = self._operand_stack.pop()
+      return_quad.left_operand = data.address
+    
+    self._quads.push_quad(return_quad)
+  
+  def push_constant(self, cnst):
+    # TODO: Identify types
+    t = GreaseType(GreaseTypeClass.Int)
+    self._operand_stack.push(GreaseVar(t,cnst,AddressingMethod.Literal))
+
+  def push_substruct(self, name):
+    self.make_operand()
+    self._last_substruct = name
 
   def push_operator(self, operator):
     self._operator_stack.push(operator)
@@ -160,7 +185,6 @@ class Greaser:
     self._agregate_stack.push(arr)
     self.push_fake_bottom()
     self._dim = 0
-    
 
   def push_dim_stack(self):
     arr = self._agregate_stack.peek()
@@ -190,20 +214,17 @@ class Greaser:
 
   def make_addr(self):
     aux = self._operand_stack.pop()
-    temp = GreaseVar(GreaseType(GreaseTypeClass.Int), self._next_local_address, AddressingMethod.Relative)
+    temp = GreaseVar(GreaseType(GreaseTypeClass.Pointer, aux.type), self._next_local_address, AddressingMethod.Relative)
     quad = Quadruple(Operation.ADDR, aux.address, result=temp.address)
     self._quads.push_quad(quad)
     self.push_operand(temp)
     self._next_local_address += 1
 
-  def push_constant(self, cnst):
-    # TODO: Identify types
-    t = GreaseType(GreaseTypeClass.Int)
-    self._operand_stack.push(GreaseVar(t,cnst,AddressingMethod.Literal))
-
-  def push_substruct(self, name):
-    self.make_operand()
-    self._last_substruct = name
+  def make_gosub(self):
+    if self._next_param < len(self._active_fn.param_types):
+      raise UndefinedFunction('Invalid function signature. Check argument count.')
+    gosub = Quadruple(Operation.GOSUB, self._active_fn.start)
+    self._quads.push_quad(gosub)
 
   def make_operand(self):
     if self._last_substruct is None:
@@ -235,6 +256,30 @@ class Greaser:
       self.push_operand(var)
 
     self._last_substruct = None
+  
+  def make_fn(self):
+    if self._operator_stack.peek() is Operation.DEREF:
+      self._operator_stack.pop() # This operation can not be executed by VM
+      self.make_deref()
+
+    if self._operator_stack.peek() is Operation.ACCESS:
+      self._operator_stack.pop() # This operation can not be executed by VM
+      parent = self._operand_stack.peek()
+      
+      if parent.type.type_class is not GreaseTypeClass.Struct:
+        raise TypeMismatch('Expression must be struct')
+
+      self._active_fn = parent.type.type_data.variables.find_function(self._last_substruct)
+
+      if self._active_fn is None:
+        raise UndefinedFunction(self._last_substruct)
+
+      self.make_addr() # get pointer to object
+      
+    else:
+      self._active_fn = self.find_function(self._last_substruct)
+
+    self._last_substruct = None
 
   def make_deref(self):
     pointer = self._operand_stack.pop()
@@ -259,34 +304,6 @@ class Greaser:
     res.method = AddressingMethod.Indirect
     res.type = GreaseType(GreaseTypeClass.Pointer, var_type)
 
-  def make_jump(self, to_stack=False):
-    if to_stack:
-      to = self._jump_stack.pop()
-      quad = Quadruple(Operation.JMP, result=AddressingMethod.Literal | to)
-    else:
-      self._jump_stack.push(self._quads.next_free_quad)
-      quad = Quadruple(Operation.JMP)
-
-    self._quads.push_quad(quad)
-  
-  def make_jump_f(self):
-    self._jump_stack.push(self._quads.next_free_quad)
-    cond = self._operand_stack.pop()
-    quad = Quadruple(Operation.JMP_F, cond.address)    
-    self._quads.push_quad(quad)
-
-  def push_jmp(self):
-    self._jump_stack.push(self._quads.next_free_quad)
-
-  def fill_jump(self, offset=0):
-    quad_no = self._jump_stack.pop()
-
-    if quad_no is not None:
-      next_quad = self._quads.next_free_quad
-      self._quads.fill_quad(quad_no, AddressingMethod.Literal | (next_quad + offset))
-    else:
-      raise GreaseError('No jumps pending to be resolved')
-
   def make_fn_call(self, fn):
     era = Quadruple(Operation.ERA, fn.size)
     self._quads.push_quad(era)
@@ -295,12 +312,16 @@ class Greaser:
 
   def make_param(self):
     arg = self._operand_stack.pop()
-    param = self._active_fn.params[self._next_param]
+    param_type = self._active_fn.params[self._next_param]
 
-    if not Greaser.can_assign(arg.type, param.type):
-      raise TypeMismatch('Found {} but expected {} in arg {}'.format(arg, param, self._next_param))
+    if not Greaser.can_assign(arg.type, param_type):
+      raise TypeMismatch('Found {} but expected {} in arg {}'.format(arg.type, param_type, self._next_param))
 
-    param_quad = Quadruple(Operation.PARAM, arg.address, result=AddressingMethod.Literal | self._next_param)
+    # The last frame pointer and return address are saved in the first two
+    # memory addresses of the stack so params start at 2
+    param = GreaseVar(param_type, self._next_param + 2, AddressingMethod.Relative)
+
+    param_quad = Quadruple(Operation.PARAM, arg.address, result=param.address)
     
     self._quads.push_quad(param_quad)
 
@@ -347,6 +368,32 @@ class Greaser:
     expr = self._operand_stack.pop()
 
     self._quads.push_quad(Quadruple(operator, expr.address))
+  
+  def make_jump(self, to_stack=False):
+    if to_stack:
+      to = self._jump_stack.pop()
+      quad = Quadruple(Operation.JMP, result=AddressingMethod.Literal | to)
+    else:
+      self._jump_stack.push(self._quads.next_free_quad)
+      quad = Quadruple(Operation.JMP)
+
+    self._quads.push_quad(quad)
+  
+  def make_jump_f(self):
+    self._jump_stack.push(self._quads.next_free_quad)
+    cond = self._operand_stack.pop()
+    quad = Quadruple(Operation.JMP_F, cond.address)    
+    self._quads.push_quad(quad)
+
+  def fill_jump(self, offset=0):
+    quad_no = self._jump_stack.pop()
+
+    if quad_no is not None:
+      next_quad = self._quads.next_free_quad
+      self._quads.fill_quad(quad_no, AddressingMethod.Literal | (next_quad + offset))
+    else:
+      raise GreaseError('No jumps pending to be resolved')
+
 
   def resolve_main(self):
     main = self.find_function('main')
@@ -369,8 +416,8 @@ class Greaser:
     print("> Jump Stack = ")
     self._jump_stack.pprint()
 
-  def reset_local_address(self):
-    self._next_local_address = 0
+  def reset_local_address(self, addr=0):
+    self._next_local_address = addr
 
   def write_to_file(self, name):
     out_file = open(name, 'wb')
