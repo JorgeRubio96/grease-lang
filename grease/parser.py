@@ -31,10 +31,8 @@ def p_program(p):
   '''program : optional_imports optional_global_variables np_jump_to_main optional_declarations'''
   try:
     greaser.resolve_main()
-  except UndefinedFunction as e:
-    print('Main is not defined')
   except GreaseError as e:
-    e.print(p.lineno(3))
+    e.print(p.lineno(4))
     raise
 
   # Debug print
@@ -49,7 +47,7 @@ def p_optional_global_variables(p):
 def p_np_jump_to_main(p):
   '''np_jump_to_main : '''
   # Agregar primer cuadruplo salto a main
-  greaser.make_jump()
+  greaser.make_call_main()
 
 # Permite tener 0 o mas import statements
 # Left recursive

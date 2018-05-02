@@ -1,6 +1,7 @@
 from enum import Enum
 from grease.core.stack import Stack
 from grease.core.type import GreaseTypeClass
+from grease.core.variable import AddressingMethod
 from sys import byteorder
 
 class Operation(Enum):
@@ -39,9 +40,32 @@ class Quadruple(object):
     self.right_operand = rhs
     self.result = result
 
-  def to_list(self):
+  def to_list(self, global_offset):
     op = Operation(self.operator).value
-    return [op, self.left_operand, self.right_operand, self.result]
+    
+    if self.left_operand is None:
+      lhs = None
+    else:
+      lhs = self.left_operand.address
+      if self.left_operand.method is AddressingMethod.Direct:
+        lhs += global_offset
+
+
+    if self.right_operand is None:
+      rhs = None
+    else:
+      rhs = self.right_operand.address
+      if self.right_operand.method is AddressingMethod.Direct:
+        rhs += global_offset
+
+    if self.result is None:
+      res = None
+    else:
+      res = self.result.address
+      if self.result.method is AddressingMethod.Direct:
+        res += global_offset
+
+    return [op, lhs, rhs, res]
 
 class QuadrupleStore:
   def __init__(self):
@@ -62,7 +86,7 @@ class QuadrupleStore:
 
   def write_to_file(self, out_file):
     for quad in self._quads:
-      for el in quad.to_list():
+      for el in quad.to_list(self.next_free_quad):
         if el is None:
           out_file.write((0).to_bytes(8, byteorder))
         else:
@@ -74,7 +98,7 @@ class QuadrupleStore:
     count = 0
     print("Quads ===============================")
     #Traer lista de cuadruplos
-    l = [x.to_list() for x in self._quads]
+    l = [x.to_list(self.next_free_quad) for x in self._quads]
     #mientras el elemento(cuadruplo) este en la lista
     for e in l:
       print(str(count), end=':  ')

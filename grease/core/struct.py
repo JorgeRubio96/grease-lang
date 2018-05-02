@@ -8,13 +8,12 @@ class GreaseStruct:
         self.variables = VariableTable()
         self.functions = FunctionDirectory()
         self.interfaces = InterfaceTable()
-        self.total_size = 0
-        self.next_addr = 0
+        self.size = 0
         
         for name, variable in variables.items():
-            variable.address = self.next_addr
+            variable.address = self.size
             self.variables.add_variable(name, variable)
-            self.next_addr += 1
+            self.size += variable.type.size
 
         for name, fn in functions.items():
             self.functions.add_function(name, fn)
@@ -23,9 +22,9 @@ class GreaseStruct:
             self.interfaces.add_interface(name, interface)
 
     def add_variable(self, name, var):
-        var.address = self.next_addr
+        var.address = self.size
         self.variables.add_variable(name, var)
-        self.next_addr += 1
+        self.size += var.type.size
 
     def has_interface(self, interface):
         return interface in self.interfaces._interfaces.values()

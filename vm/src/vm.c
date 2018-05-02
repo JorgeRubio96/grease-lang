@@ -63,7 +63,6 @@ uint64_t instrNum   = 0;
 uint64_t reg1       = 0;
 uint64_t reg2       = 0;
 uint64_t reg3       = 0;
-uint64_t return_reg = 0;
 
 grease_var_t * mem;
 
@@ -98,10 +97,14 @@ grease_var_t decode( uint64_t code )
     case CHAR:
       res.c = * (char *) &tmp;
       return res;
+    case POINTER:
+      res.a = tmp;
+      return res;
     default:
       printf("Error! in literal");
       halt();
     }
+    break;
   }
   default:
     printf("Error! in decode");
@@ -115,12 +118,15 @@ void assign(uint64_t code, grease_var_t val )
   switch( code & ACCESS ){
   case DIRECT:
     mem[code & CONTENT] = val;
+    break;
   case INDIRECT:
     mem[mem[code & CONTENT].a & CONTENT] = val;
+    break;
   case RELATIVE:
     mem[sp - (code & CONTENT)] = val;
+    break;
   default:
-     printf("Error! in assign");
+     printf("Error! in vm assign: %lx\n", code & ACCESS);
      halt();
   }
 }
@@ -728,22 +734,26 @@ void jmpF( void ) {
 }
 
 void print_( void ){
-  printf("Grease Output:\n");
   switch(reg1 & TYPE){
     case INT:
-      printf("%ld\n", decode(reg1).i);
+      printf("%ld", decode(reg1).i);
       break;
     case FLOAT:
-      printf("%lf\n", decode(reg1).f);
+      printf("%lf", decode(reg1).f);
       break;
     case CHAR:
-      printf("%c\n", decode(reg1).c);
+      printf("%c", decode(reg1).c);
       break;
     case BOOL:
-      printf("%s\n", decode(reg1).b ? "true" : "false");
+      printf("%s", decode(reg1).b ? "true" : "false");
+      break;
+    case POINTER:
+      reg1 = mem[reg1 & CONTENT].a;
+      printf("Debug: %lx\n", reg1 & CONTENT);
+      print_();
       break;
     default:
-      printf("Error!! in print");
+      printf("Error!! in print, %lx", reg1 & TYPE);
       halt();
   }
 }
@@ -771,22 +781,22 @@ void scan_( void ){
 }
 
 void return_( void ){
-  mem[return_reg] = decode(reg1);
+  assign(reg3, decode(reg1));
   pc = mem[sp - 1].a; // Location of return addr
   sp = mem[sp].a;     // Location of FramePointer
 }
 
 void era( void ){
   uint64_t fp = sp;                 // Save last sp
-  sp += reg1 & CONTENT;
+  sp += decode(reg1).a;
   mem[sp].a = fp;
 }
 
 void gosub( void ){
-  mem[sp - 2].a = pc;           // Return addr
+  mem[sp - 1].a = pc;       // Return addr
   pc = decode(reg1).a * 4;  // JMP to subroutine
 }
-  
+
 void addr( void ){
   grease_var_t res;
   switch(reg1 & ACCESS) {
@@ -801,8 +811,9 @@ void addr( void ){
   case DIRECT:
     res.a = reg1 & CONTENT;
     assign(reg3, res);
+    break;
   default:
-    printf("Error!! in addr");
+    printf("Error!! in addr: %lx\n", reg1 & ACCESS);
     halt();
   }
 }
@@ -819,8 +830,18 @@ void param( void ){
   case INDIRECT:
     assign(reg3, mem[mem[reg1 & CONTENT].a & CONTENT]);
     break;
+  case LITERAL:
+    assign(reg3, decode(reg1));
+    break;
   default:
-    printf("Error!! in param");
+    printf("Error!! in param: %lx\n", reg1 & ACCESS);
+    halt();
+  }
+}
+
+void ver( void ){
+  if(decode(reg1).a >= decode(reg2).a) {
+    printf("Error: Array out of bounds");
     halt();
   }
 }
@@ -900,8 +921,13 @@ void eval()
       addr();
     case PARAM:
       param();
+      break;
+    case VER:
+      ver();
+      break;
     default:
-    printf("Unknown opcode");
+    printf("Unknown opcode: %lx\n", instrNum);
+    printf("Debug IR: %u\n", pc);
     halt();
       // Err
   }
@@ -927,7 +953,8 @@ int main( int argc, const char * argv[] )
   fileLen = ftell(fileExec);
   rewind(fileExec);
   fread(&maxmem, 8, 1, fileExec);
-  //get memory 1GB
+  fread(&sp, 8, 1, fileExec);
+  // Max memory 1GB
   if (maxmem > 1000000)
   {	
     // Err
@@ -935,9 +962,8 @@ int main( int argc, const char * argv[] )
   }
 
   mem = malloc(maxmem);
-  return_reg = fileLen-8;
-  fread(mem, fileLen-8, 1, fileExec);
-
+  //printf("%ld", maxmem);
+  fread(mem, fileLen-16, 1, fileExec);
   // running
   run();
   return 0;
