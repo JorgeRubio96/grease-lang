@@ -70,7 +70,6 @@ grease_var_t * mem;
 int running = 1;
 
 void halt( void ) {
-  printf("VM: halt\n");
     running = 0;
 }
 
@@ -276,7 +275,7 @@ void add( void ) {
       assign(reg3, res);
       break;
     default:
-      printf("Error!! in ADD");
+      printf("Error!! in ADD2: %lx", reg2 & TYPE);
       halt();
     }
     break;
@@ -291,7 +290,7 @@ void add( void ) {
       assign(reg3, res);
       break;
     default:
-      printf("Error!! in ADD");
+      printf("Error!! in ADD2: %lx", reg2 & TYPE);
       halt();
     }
     break;
@@ -306,12 +305,12 @@ void add( void ) {
       assign(reg3, res);
       break;
     default:
-      printf("Error!! in ADD");
+      printf("Error!! in ADD2: %lx", reg2 & TYPE);
       halt();
     }
     break;
   default:
-    printf("Error!! in ADD");	
+    printf("Error!! in ADD1: %lx", reg1 & TYPE);
     halt();
   }
 }
@@ -384,7 +383,7 @@ void equals( void ) {
       assign(reg3, res);
       break;
     default:
-      printf("Error!! in equals");
+      printf("Error!! in equals2: %lx", reg2 & TYPE);
       halt();
     }
     break;
@@ -395,7 +394,7 @@ void equals( void ) {
       assign(reg3, res);
       break;
     default:
-      printf("Error!! in equals");
+      printf("Error!! in equals2: %lx", reg2 & TYPE);
       halt();
     }
     break;
@@ -406,7 +405,7 @@ void equals( void ) {
       assign(reg3, res);
       break;
     default:
-      printf("Error!! in equals");
+      printf("Error!! in equals2: %lx", reg2 & TYPE);
       halt();
     }
     break;
@@ -417,12 +416,12 @@ void equals( void ) {
       assign(reg3, res);
       break;
     default:
-      printf("Error!! in equals");
+      printf("Error!! in equals2: %lx", reg2 & TYPE);
       halt();
     }
     break;
   default:
-    printf("Error!! in equals");
+    printf("Error!! in equals1: %lx", reg1 & TYPE);
     halt();
   }
 }
@@ -727,6 +726,7 @@ void jmp( void ){
 }
 
 void jmpF( void ) {
+  printf("JUMP: %d\n", decode(reg1).b);
   if (!decode(reg1).b)
   {
     jmp();
@@ -746,11 +746,6 @@ void print_( void ){
       break;
     case BOOL:
       printf("%s", decode(reg1).b ? "true" : "false");
-      break;
-    case POINTER:
-      reg1 = mem[reg1 & CONTENT].a;
-      printf("Debug: %lx\n", reg1 & CONTENT);
-      print_();
       break;
     default:
       printf("Error!! in print, %lx", reg1 & TYPE);
@@ -823,15 +818,19 @@ void param( void ){
   switch(reg1 & ACCESS) {
   case DIRECT:
     assign(reg3, mem[reg1 & CONTENT]);
+    printf("PARAM: %lx\n", mem[reg1 & CONTENT].a);
     break;
   case RELATIVE:
     assign(reg3, mem[fp - (reg1 & CONTENT)]);
+    printf("PARAM: %lx\n", mem[fp - (reg1 & CONTENT)].a);
     break;
   case INDIRECT:
     assign(reg3, mem[mem[reg1 & CONTENT].a & CONTENT]);
+    printf("PARAM: %lx\n", mem[mem[reg1 & CONTENT].a & CONTENT].a);
     break;
   case LITERAL:
     assign(reg3, decode(reg1));
+    printf("PARAM: %lx\n", decode(reg1).a);
     break;
   default:
     printf("Error!! in param: %lx\n", reg1 & ACCESS);
@@ -927,7 +926,6 @@ void eval()
       break;
     default:
     printf("Unknown opcode: %lx\n", instrNum);
-    printf("Debug IR: %u\n", pc);
     halt();
       // Err
   }
@@ -937,7 +935,9 @@ void run()
 {
   while( running )
   {
+    printf("\nDEBUG: %u\n", pc / 4);
     fetch();
+    printf("DEBUG: %lx\n", instrNum);
     eval();
   }
 }

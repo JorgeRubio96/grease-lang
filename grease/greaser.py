@@ -87,7 +87,7 @@ class Greaser:
     interface = self._interfaces.find_interface(name)  
     
     if interface is not None:
-      return GreaseType(GreaseTypeClass.Pointererface, interface)
+      return GreaseType(GreaseTypeClass.Intererface, interface)
 
     raise UndefinedType(name)
 
@@ -204,8 +204,8 @@ class Greaser:
     arr = self._agregate_stack.peek()
     if len(arr.type.dimens) > self._dim : #if the next pointer is different from null then
       t = self._operand_stack.peek()
-      size = GreaseVar(GreaseType(GreaseTypeClass.Pointer), arr.type.dimens[self._dim].size, AddressingMethod.Literal)
-      offset = GreaseVar(GreaseType(GreaseTypeClass.Pointer), arr.type.dimens[self._dim].offset, AddressingMethod.Literal)
+      size = GreaseVar(GreaseType(GreaseTypeClass.Int), arr.type.dimens[self._dim].size, AddressingMethod.Literal)
+      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), arr.type.dimens[self._dim].offset, AddressingMethod.Literal)
       ver = Quadruple(Operation.VER, t, size)
       self._quads.push_quad(ver)
       self.push_operator(Operation.TIMES)
@@ -228,7 +228,7 @@ class Greaser:
 
   def make_addr(self):
     aux = self._operand_stack.pop()
-    temp = GreaseVar(GreaseType(GreaseTypeClass.Pointer, aux.type), self._next_local_address, AddressingMethod.Relative)
+    temp = GreaseVar(GreaseType(GreaseTypeClass.Int), self._next_local_address, AddressingMethod.Relative)
     quad = Quadruple(Operation.ADDR, aux, result=temp)
     self._quads.push_quad(quad)
     self.push_operand(temp)
@@ -237,7 +237,7 @@ class Greaser:
   def make_gosub(self):
     if self._next_param < len(self._called_fn.param_types):
       raise UndefinedFunction('Invalid function signature. Check argument count.')
-    start = GreaseVar(GreaseType(GreaseTypeClass.Pointer), self._called_fn.start, AddressingMethod.Literal)
+    start = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.start, AddressingMethod.Literal)
     gosub = Quadruple(Operation.GOSUB, start)
     self._quads.push_quad(gosub)
 
@@ -257,7 +257,7 @@ class Greaser:
     if self._operator_stack.peek() is Operation.ACCESS:
       self._operator_stack.pop() # This operation can not be executed by VM
       parent = self._operand_stack.peek()
-      
+
       if parent.type.type_class is not GreaseTypeClass.Struct:
         raise TypeMismatch('Expression must be struct')
 
@@ -267,7 +267,7 @@ class Greaser:
         raise UndefinedMember(self._last_substruct)
       
       self.make_addr()
-      offset = GreaseVar(GreaseType(GreaseTypeClass.Pointer), var._address, AddressingMethod.Literal)
+      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AddressingMethod.Literal)
       self.push_operand(offset)
       
       self.make_offset(var.type)
@@ -299,7 +299,7 @@ class Greaser:
     else:
       self._called_fn = self.find_function(self._last_substruct)
 
-    size = GreaseVar(GreaseType(GreaseTypeClass.Pointer), self._called_fn.size, AddressingMethod.Literal)
+    size = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.size, AddressingMethod.Literal)
     era = Quadruple(Operation.ERA, size)
     self._quads.push_quad(era)
     self._next_param = 0
@@ -326,7 +326,7 @@ class Greaser:
     self.make_expression()
     res = self._operand_stack.peek()
     res.method = AddressingMethod.Indirect
-    res.type = GreaseType(GreaseTypeClass.Pointer, var_type)
+    res.type = GreaseType(GreaseTypeClass.Int, var_type)
 
   def make_param(self):
     arg = self._operand_stack.pop()
@@ -412,7 +412,7 @@ class Greaser:
       if to is None:
         raise GreaseError('Empty jump stack!')
 
-      address = GreaseVar(GreaseType(GreaseTypeClass.Pointer), to, AddressingMethod.Literal)
+      address = GreaseVar(GreaseType(GreaseTypeClass.Int), to, AddressingMethod.Literal)
       quad = Quadruple(Operation.JMP, result=address)
     else:
       self._jump_stack.push(self._quads.next_free_quad)
@@ -456,7 +456,7 @@ class Greaser:
 
     address = GreaseVar(GreaseType(GreaseTypeClass.Int), main.start, AddressingMethod.Literal)
     size = GreaseVar(GreaseType(GreaseTypeClass.Int), main.size, AddressingMethod.Literal)
-    self._quads.fill_quad(self._jump_stack.pop(), address)
+    self._quads._quads[self._jump_stack.pop()].left_operand = address
     self._quads._quads[self._jump_stack.pop()].left_operand = size
     
 
@@ -478,7 +478,9 @@ class Greaser:
     self._next_local_address = addr
 
   def write_to_file(self, name):
+    # Inatial SP location
     sp = self._quads.next_free_quad + self._next_global_address + 1
+    sp *= 4 # Remember that there are 4 adrresses per quad
 
     out_file = open(name, 'wb')
     out_file.write((200000).to_bytes(8, byteorder))

@@ -1,28 +1,48 @@
 var testArr : [Int ; 5]
 fn binarySearch(l : Int, r : Int, x :  Int) : Int
-	if r ge l
-		var mid = l + (r - l)/2
+	if r ge l:
+		var mid = (l + r) / 2
 
 		if testArr[mid] eq x :
 			return mid
 
 		if testArr[mid] gt x : 
-			return binarySearch(l, mid -1, x)
+			return binarySearch(l, mid - 1, x)
 
 		return binarySearch(mid + 1, r, x)
 
 	return -1
 
 fn main() : Int
-	testArr =
-	var n = arr.size / arr[0].size
-	var x = 10
-	var res = binarySearch(0, n-1, x)
+	var x = 5
+	var i = 0
+
+	while i lt 10:
+		testArr[i / 2] = i
+		i = i + 1
+	
+	var res = binarySearch(0, 5, x)
 	if res eq -1 : 
-		print 'No existe elemento'
+		print 'N'
+		print 'o'
+		print ' '
+		print 'e'
+		print 'x'
+		print 'i'
+		print 's'
+		print 't'
+		print 'e'
 		print '\n'
 	else :
-		print 'Elemento es ta presente en el index '
+		print 'P'
+		print 'r'
+		print 'e'
+		print 's'
+		print 'e'
+		print 'n'
+		print 't'
+		print 'e'
+		print ':'
 		print res
 
 	return 0

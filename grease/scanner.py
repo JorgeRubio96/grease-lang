@@ -82,7 +82,7 @@ def t_CONST_REAL(t):
     return t
 
 def t_CONST_INT(t):
-    r'-?[0-9]+'
+    r'[0-9]+'
     t.value = int(t.value)
     return t
 
