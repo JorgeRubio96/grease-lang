@@ -1,12 +1,12 @@
 var a : Int
 var i = 0
-int b = 0
+var b = 0
 
-fn fibo_r(n : Int) : Int
+fn fiboR(n : Int) : Int
 	if n eq 0 or n eq 1 :
 		return 1
-	else :
-		return fibo_r(n - 2) + fibo_r(n - 1)
+	else:
+		return fiboR(n - 2) + fiboR(n - 1)
 
 fn fibo_w(n : Int) : Int
 	var actual : Int
@@ -25,13 +25,13 @@ fn fibo_w(n : Int) : Int
 
 
 fn main() : Int
-	print 'Ingresa numero para fibonacci \n'
 	scan a
 
 	while i lt a :
-		if fibo_r(a) not 0:
-			print ", "
-		print fibo(a)
+		if fiboR(a) not eq 0:
+			print ','
+			print ' '
+		print fibo_w(a)
 		i = i + 1
 
 	print fibo_w(a)

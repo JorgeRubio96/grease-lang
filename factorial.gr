@@ -10,7 +10,6 @@ fn fact_r(n : Int) : Int
 		return 1
 
 fn fact_w() : Int
-	print 'Ingresa un numero positivo: '
 	scan number
 
 	while i le number :
@@ -19,19 +18,14 @@ fn fact_w() : Int
 		
 	return factorial
 
-fn main() : Int
+fn main()
 	var n : Int
 	res = fact_w()
-	print 'Resultado ciclo: '
 	print res
 
 	print '\n'
 
-	print 'Ingresa un numero positivo: '
 	scan n
 	res = fact_r(n)
-	print 'Resultado recursivo: '
 	print res
 	print '\n'
-
-	return 0

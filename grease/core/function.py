@@ -3,10 +3,9 @@ from grease.core.exceptions import VariableRedefinition
 from grease.core.variable import AddressingMethod
 
 class GreaseFn:
-  def __init__(self, params, return_type, return_data=None, param_types=[], size=0, start=0):
+  def __init__(self, params, return_type, param_types=[], size=0, start=0):
     self.params = params
     self.return_type = return_type
-    self.return_data = return_data
     self._variables = None
     self.param_types = param_types
     self.size = size
@@ -29,7 +28,6 @@ class GreaseFnBuilder:
   def __init__(self):
     self._params = {}
     self._return_type = None
-    self._return_data = None
     self._name = None
     self._struct = None
     self._param_types = []
@@ -44,9 +42,8 @@ class GreaseFnBuilder:
 
     self._param_types.append(param.type)
 
-  def add_return_type(self, return_type, return_data=None):
+  def add_return_type(self, return_type):
     self._return_type = return_type
-    self._return_data = return_data
 
   def add_name(self, name):
     self._name = name
@@ -55,9 +52,11 @@ class GreaseFnBuilder:
     self._struct = struct
 
   def build(self):
-    return self._name, self._struct, GreaseFn(self._params, self._return_type, self._return_data, self._param_types)
+    return self._name, self._struct, GreaseFn(self._params, self._return_type, self._param_types)
 
   def reset(self):
     self._params = {}
     self._return_type = None
-    self._return_data = None
+    self._name = None
+    self._struct = None
+    self._param_types = []

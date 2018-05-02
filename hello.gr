@@ -1,0 +1,10 @@
+fn PrintStr(str: Char *)
+    while *str not eq '\0':
+        print *str
+        str = str + 1
+    print '\n'
+
+fn main() : Int
+    var hello = "Hello world"
+    print_str(hello)
+    return 0

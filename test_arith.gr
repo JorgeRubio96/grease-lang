@@ -1,8 +1,9 @@
 var a : Int
 var b = 2
 
-fn main() : Int
-  scan a
+fn test() : Int
+  return 1
 
-  print a + b * b - a
+fn main() : Int
+  print -test() + test()
   return 0

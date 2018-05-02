@@ -1,6 +1,7 @@
 import pprint as pp
 from grease.core.type import GreaseTypeClass
 from grease.core.quadruple import Operation
+from grease.core.variable import AddressingMethod
 
 class SemanticCube(object):
   """docstring for SemanticCube"""
@@ -8,10 +9,6 @@ class SemanticCube(object):
     self.cube = {}
 
   def set_return_value_for(self, left, op, right, res):
-    if not isinstance(left, GreaseTypeClass) or not isinstance(right, GreaseTypeClass) \
-      or not isinstance(op, Operation) or not isinstance(res, GreaseTypeClass):
-        return False
-    
     if op not in self.cube:
       self.cube[op] = {}
 
@@ -23,11 +20,30 @@ class SemanticCube(object):
     return True
 
   def check(self, lhs, op, rhs):
-    try:
-      return self.cube[op][lhs.type.type_class][rhs.type.type_class]
-    except:
+    if rhs is None:
+      rhs_type = None
+    elif rhs.method is AddressingMethod.Indirect:
+      rhs_type = rhs.type.type_data.type_class
+    else:
+      rhs_type = rhs.type.type_class
+    
+    if lhs.method is AddressingMethod.Indirect:
+      lhs_type = lhs.type.type_data.type_class
+    else:
+      lhs_type = lhs.type.type_class
+    
+    a = self.cube.get(op)
+    
+    if a is None:
       return None
 
+    b = a.get(lhs_type)
+
+    if b is None:
+      return None
+
+    return b.get(rhs_type)
+    
   def print_cube(self):
     pp.print(self)
 
@@ -73,4 +89,6 @@ cube.set_return_value_for(GreaseTypeClass.Float, Operation.LE, GreaseTypeClass.F
 cube.set_return_value_for(GreaseTypeClass.Bool, Operation.NOT, None, GreaseTypeClass.Bool)
 cube.set_return_value_for(GreaseTypeClass.Int, Operation.ASSIGN, GreaseTypeClass.Int, GreaseTypeClass.Bool)
 cube.set_return_value_for(GreaseTypeClass.Float, Operation.ASSIGN, GreaseTypeClass.Float, GreaseTypeClass.Bool)
-
+cube.set_return_value_for(GreaseTypeClass.Bool, Operation.AND, GreaseTypeClass.Bool, GreaseTypeClass.Bool)
+cube.set_return_value_for(GreaseTypeClass.Bool, Operation.OR, GreaseTypeClass.Bool, GreaseTypeClass.Bool)
+cube.set_return_value_for(GreaseTypeClass.Bool, Operation.NOT, GreaseTypeClass.Bool, GreaseTypeClass.Bool)

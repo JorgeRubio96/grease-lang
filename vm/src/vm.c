@@ -90,7 +90,7 @@ grease_var_t decode( uint64_t code )
     uint64_t tmp = code & CONTENT;
     switch(code & TYPE){
     case INT:
-      res.i = * (int *) &tmp;
+      res.i = * (int32_t *) &tmp;
       return res;
     case FLOAT:
       res.f = * (float *) &tmp;
