@@ -45,6 +45,7 @@ class Greaser:
     self._operand_stack = Stack()
     self._jump_stack = Stack()
     self._agregate_stack = Stack()
+    self._era_stack = Stack()
     self._quads = QuadrupleStore()
     self._last_substruct = None
     self._next_local_address = 0
@@ -148,6 +149,9 @@ class Greaser:
 
   def push_fn_size(self):
     self._active_fn.size = self._next_local_address
+    while self._era_stack.peek() is not None:
+      quad = self._quads._quads[self._era_stack.pop()]
+      quad.left_operand = GreaseVar(GreaseType(GreaseTypeClass.Int), self._next_local_address, AddressingMethod.Literal)
 
   def push_return(self, with_data=False):
     return_quad = Quadruple(Operation.RETURN)
@@ -235,6 +239,8 @@ class Greaser:
     self._next_local_address += 1
 
   def make_gosub(self):
+    self.pop_fake_bottom()
+
     if self._next_param < len(self._called_fn.param_types):
       raise UndefinedFunction('Invalid function signature. Check argument count.')
     start = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.start, AddressingMethod.Literal)
@@ -258,6 +264,9 @@ class Greaser:
       self._operator_stack.pop() # This operation can not be executed by VM
       parent = self._operand_stack.peek()
 
+      if parent is None:
+        raise UndefinedVariable('Struct does not exist')
+
       if parent.type.type_class is not GreaseTypeClass.Struct:
         raise TypeMismatch('Expression must be struct')
 
@@ -278,6 +287,8 @@ class Greaser:
     self._last_substruct = None
   
   def make_fn(self):
+    self.push_fake_bottom()
+
     if self._operator_stack.peek() is Operation.DEREF:
       self._operator_stack.pop() # This operation can not be executed by VM
       self.make_deref()
@@ -300,6 +311,11 @@ class Greaser:
       self._called_fn = self.find_function(self._last_substruct)
 
     size = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.size, AddressingMethod.Literal)
+
+    # Recursive functions dont have their size
+    # calculated yet. Add them to era stack.
+    if self._called_fn is self._active_fn:
+      self._era_stack.push(self._quads.next_free_quad)
     era = Quadruple(Operation.ERA, size)
     self._quads.push_quad(era)
     self._next_param = 0
@@ -478,9 +494,9 @@ class Greaser:
     self._next_local_address = addr
 
   def write_to_file(self, name):
-    # Inatial SP location
-    sp = self._quads.next_free_quad + self._next_global_address + 1
-    sp *= 4 # Remember that there are 4 adrresses per quad
+    # Initial SP location
+    # Remember that there are 4 adrresses per quad
+    sp = (self._quads.next_free_quad * 4) + self._next_global_address +1
 
     out_file = open(name, 'wb')
     out_file.write((200000).to_bytes(8, byteorder))

@@ -9,6 +9,9 @@ fn binarySearch(l : Int, r : Int, x :  Int) : Int
 		if testArr[mid] gt x : 
 			return binarySearch(l, mid - 1, x)
 
+		print mid + 1
+		print '\n'
+
 		return binarySearch(mid + 1, r, x)
 
 	return -1
@@ -17,11 +20,11 @@ fn main() : Int
 	var x = 5
 	var i = 0
 
-	while i lt 10:
-		testArr[i / 2] = i
+	while i lt 5:
+		testArr[i] = i
 		i = i + 1
 	
-	var res = binarySearch(0, 5, x)
+	var res = binarySearch(0, 3, 5)
 	if res eq -1 : 
 		print 'N'
 		print 'o'

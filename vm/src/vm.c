@@ -55,8 +55,8 @@ typedef union {
 } grease_var_t;
 
 /* program counter */
-unsigned int pc = 0;
-unsigned int sp = 0; //Se actualiza en gosub 
+uint64_t pc = 0;
+uint64_t sp = 0; //Se actualiza en gosub 
 
 /* instruction fields */
 uint64_t instrNum   = 0;
@@ -726,7 +726,7 @@ void jmp( void ){
 }
 
 void jmpF( void ) {
-  printf("JUMP: %d\n", decode(reg1).b);
+  //printf("JUMP: %d\n", decode(reg1).b);
   if (!decode(reg1).b)
   {
     jmp();
@@ -755,7 +755,7 @@ void print_( void ){
 
 void scan_( void ){
   grease_var_t buffer;
-  printf("Grease Input: ");
+  //printf("Grease Input: ");
   switch(reg1 & TYPE){
     case INT:
       scanf("%ld", &buffer.i);
@@ -815,18 +815,20 @@ void addr( void ){
 
 void param( void ){
   uint64_t fp = mem[sp].a;
+  printf("PARAM R1: %lx\n", mem[fp - (reg1 & CONTENT)]);
+  printf("PARAM R3: %lx\n", reg3);
   switch(reg1 & ACCESS) {
   case DIRECT:
-    assign(reg3, mem[reg1 & CONTENT]);
-    printf("PARAM: %lx\n", mem[reg1 & CONTENT].a);
+    assign(reg3, decode(reg1));
+    printf("PARAM: %lx\n", decode(reg1).a);
     break;
   case RELATIVE:
     assign(reg3, mem[fp - (reg1 & CONTENT)]);
     printf("PARAM: %lx\n", mem[fp - (reg1 & CONTENT)].a);
     break;
   case INDIRECT:
-    assign(reg3, mem[mem[reg1 & CONTENT].a & CONTENT]);
-    printf("PARAM: %lx\n", mem[mem[reg1 & CONTENT].a & CONTENT].a);
+    assign(reg3, decode(reg1));
+    printf("PARAM: %lx\n", decode(reg1).a);
     break;
   case LITERAL:
     assign(reg3, decode(reg1));
@@ -839,6 +841,7 @@ void param( void ){
 }
 
 void ver( void ){
+  //printf("VER: %lx >= %lx\n", decode(reg1).a, decode(reg2).a);
   if(decode(reg1).a >= decode(reg2).a) {
     printf("Error: Array out of bounds");
     halt();
@@ -908,6 +911,7 @@ void eval()
       halt();
       break;
     case RETURN:
+      //printf("Returning!\n");
       return_();
       break;
     case ERA:
@@ -918,6 +922,7 @@ void eval()
       break;
     case ADDR:
       addr();
+      break;
     case PARAM:
       param();
       break;
@@ -935,9 +940,14 @@ void run()
 {
   while( running )
   {
-    printf("\nDEBUG: %u\n", pc / 4);
+    //printf("\nDEBUG: %u\n", pc / 4);
     fetch();
-    printf("DEBUG: %lx\n", instrNum);
+    //printf("DEBUG: %lx\n", instrNum);
+    //printf("DEBUG: %lx\n", reg1);
+    //printf("DEBUG: %lx\n", reg2);
+    //printf("DEBUG: %lx\n", reg3);
+    //printf("DEBUG: %lx\n", mem[sp].a);
+    //printf("DEBUG: %lx\n", mem[sp-1].a);
     eval();
   }
 }
@@ -960,7 +970,6 @@ int main( int argc, const char * argv[] )
     // Err
     return -1;
   }
-
   mem = malloc(maxmem);
   //printf("%ld", maxmem);
   fread(mem, fileLen-16, 1, fileExec);

@@ -10,8 +10,8 @@ fn fiboR(n : Int) : Int
 
 fn fibo_w(n : Int) : Int
 	var actual : Int
-	var prev = 1
-	var prevPrevVal = -1
+	var prev = 0
+	var prevPrevVal = 1
 
 	while b lt n:
 		actual = prev + prevPrevVal
@@ -21,19 +21,14 @@ fn fibo_w(n : Int) : Int
 		print ','
 		b = b + 1
 
+	print '\n'
 	return actual
 
 
 fn main() : Int
 	scan a
 
-	while i lt a :
-		if fiboR(a) not eq 0:
-			print ','
-			print ' '
-		print fibo_w(a)
-		i = i + 1
-
-	print fibo_w(a)
+	print fiboR(a)
+	print '\n'
 
 	return 0

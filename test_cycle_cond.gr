@@ -1,17 +1,21 @@
-var a : Int
-var b = 2
+fn fib_it(i : Int)
+  var prev = 0
+  var pprev = 1
+  var count = 0
+  var n : Int
+
+  while count lt i:
+    n = pprev + prev
+    print n
+    print '\n'
+    pprev = prev
+    prev = n
+    count = count + 1
 
 fn main() : Int
-  scan a
-  if a eq 2 :
-  	print a
-  else :
-  	print b + 1
+  var i: Int
+  scan i
 
-  a = 5
-  while a gt 2 :
-  	print a
-  	a = a - 1
+  fib_it(i)
 
-  print a + b * b - a
   return 0

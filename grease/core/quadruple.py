@@ -48,8 +48,7 @@ class Quadruple(object):
     else:
       lhs = self.left_operand.address
       if self.left_operand.method is AddressingMethod.Direct:
-        lhs += global_offset
-        lhs *= 4
+        lhs += global_offset * 4
 
 
     if self.right_operand is None:
@@ -57,16 +56,14 @@ class Quadruple(object):
     else:
       rhs = self.right_operand.address
       if self.right_operand.method is AddressingMethod.Direct:
-        rhs += global_offset
-        rhs *= 4
+        rhs += global_offset * 4
 
     if self.result is None:
       res = None
     else:
       res = self.result.address
       if self.result.method is AddressingMethod.Direct:
-        res += global_offset
-        res *= 4
+        res += global_offset * 4
 
     return [op, lhs, rhs, res]
 

@@ -22,7 +22,7 @@ class GreaseStruct:
             self.interfaces.add_interface(name, interface)
 
     def add_variable(self, name, var):
-        var.address = self.size
+        var._address = self.size
         self.variables.add_variable(name, var)
         self.size += var.type.size
 

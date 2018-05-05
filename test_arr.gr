@@ -6,6 +6,6 @@ var testArr : [Int ; 5]
 
 fn main() : Int
 	a = b / 2 * 3
-	testArr[d - b] = b + a
+	testArr[0] = b + a
 	print testArr[0]
 	return 0
