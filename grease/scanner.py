@@ -65,7 +65,7 @@ def t_ignore_MULTI_COMMENT(t):
     t.lexer.lineno += t.value.count('\n')
 
 def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z0-9_\-]*'
+    r'[a-zA-Z_][a-zA-Z0-9_]*'
     t.type = reserved.get(t.value, 'ID')
 
     if t.type == 'CONST_BOOL':

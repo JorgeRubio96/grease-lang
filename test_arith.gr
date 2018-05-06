@@ -1,15 +1,9 @@
-
 fn exp(n : Int, e: Int) : Int
-  print e
-  print '\n'
   if e eq 0:
     return 1
-
-  var a = e - 1
-  print a
-  return n * exp(n, e - 1)
+  return n * exp(n,e - 1)
 
 fn main() : Int
-  print exp(4, 2)
+  print exp(2, 10)
   print '\n'
   return 0

@@ -815,24 +815,18 @@ void addr( void ){
 
 void param( void ){
   uint64_t fp = mem[sp].a;
-  printf("PARAM R1: %lx\n", mem[fp - (reg1 & CONTENT)]);
-  printf("PARAM R3: %lx\n", reg3);
   switch(reg1 & ACCESS) {
   case DIRECT:
     assign(reg3, decode(reg1));
-    printf("PARAM: %lx\n", decode(reg1).a);
     break;
   case RELATIVE:
     assign(reg3, mem[fp - (reg1 & CONTENT)]);
-    printf("PARAM: %lx\n", mem[fp - (reg1 & CONTENT)].a);
     break;
   case INDIRECT:
     assign(reg3, decode(reg1));
-    printf("PARAM: %lx\n", decode(reg1).a);
     break;
   case LITERAL:
     assign(reg3, decode(reg1));
-    printf("PARAM: %lx\n", decode(reg1).a);
     break;
   default:
     printf("Error!! in param: %lx\n", reg1 & ACCESS);
@@ -971,7 +965,6 @@ int main( int argc, const char * argv[] )
     return -1;
   }
   mem = malloc(maxmem);
-  //printf("%ld", maxmem);
   fread(mem, fileLen-16, 1, fileExec);
   // running
   run();

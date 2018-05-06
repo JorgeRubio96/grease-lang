@@ -47,6 +47,7 @@ class Greaser:
     self._agregate_stack = Stack()
     self._era_stack = Stack()
     self._quads = QuadrupleStore()
+    self._param_quads = []
     self._last_substruct = None
     self._next_local_address = 0
     self._next_global_address = 0
@@ -243,6 +244,22 @@ class Greaser:
 
     if self._next_param < len(self._called_fn.param_types):
       raise UndefinedFunction('Invalid function signature. Check argument count.')
+
+    # Recursive functions dont have their size
+    # calculated yet. Add them to era stack.
+    if self._called_fn is self._active_fn:
+      self._era_stack.push(self._quads.next_free_quad)
+    size = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.size, AddressingMethod.Literal)
+
+    # Make ERA
+    era = Quadruple(Operation.ERA, size)
+    self._quads.push_quad(era)
+
+    for param_quad in self._param_quads:
+      self._quads.push_quad(param_quad)
+
+    self._param_quads = []
+    
     start = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.start, AddressingMethod.Literal)
     gosub = Quadruple(Operation.GOSUB, start)
     self._quads.push_quad(gosub)
@@ -309,15 +326,7 @@ class Greaser:
       
     else:
       self._called_fn = self.find_function(self._last_substruct)
-
-    size = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.size, AddressingMethod.Literal)
-
-    # Recursive functions dont have their size
-    # calculated yet. Add them to era stack.
-    if self._called_fn is self._active_fn:
-      self._era_stack.push(self._quads.next_free_quad)
-    era = Quadruple(Operation.ERA, size)
-    self._quads.push_quad(era)
+    
     self._next_param = 0
     self._last_substruct = None
 
@@ -348,17 +357,15 @@ class Greaser:
     arg = self._operand_stack.pop()
     param_type = self._called_fn.param_types[self._next_param]
 
-    # The last frame pointer and return address are saved in the first two
-    # memory addresses of the stack so params start at 2
+    # Params start at the third address location in the stack.
+    # The first two are occupied by the previous FP and PC
     param = GreaseVar(param_type, self._next_param + 2, AddressingMethod.Relative)
 
     if not Greaser.can_assign(arg, param):
       raise TypeMismatch('Found {} but expected {} in arg {}'.format(arg.type, param_type, self._next_param))
 
     param_quad = Quadruple(Operation.PARAM, arg, result=param)
-    
-    self._quads.push_quad(param_quad)
-
+    self._param_quads.append(param_quad)
     self._next_param += 1
 
   #Exp quad helper
@@ -496,7 +503,7 @@ class Greaser:
   def write_to_file(self, name):
     # Initial SP location
     # Remember that there are 4 adrresses per quad
-    sp = (self._quads.next_free_quad * 4) + self._next_global_address +1
+    sp = (self._quads.next_free_quad * 4) + self._next_global_address
 
     out_file = open(name, 'wb')
     out_file.write((200000).to_bytes(8, byteorder))
