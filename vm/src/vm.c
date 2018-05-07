@@ -18,7 +18,7 @@
 #define POINTER  0x0400000000000000
 #define ACCESS   0xF000000000000000
 #define TYPE     0x0F00000000000000
-#define CONTENT  0x00FFFFFFFFFFFFFF 
+#define CONTENT  0x00FFFFFFFFFFFFFF
 
 #define TIMES    1
 #define DIVIDE   2
@@ -57,6 +57,7 @@ typedef union {
 /* program counter */
 uint64_t pc = 0;
 uint64_t sp = 0; //Se actualiza en gosub 
+uint16_t fp = 0;
 
 /* instruction fields */
 uint64_t instrNum   = 0;
@@ -80,9 +81,9 @@ grease_var_t decode( uint64_t code )
   case DIRECT:
     return mem[code & CONTENT];
   case INDIRECT:
-    return decode(mem[sp - (code & CONTENT)].a);
+    return decode(mem[fp + (code & CONTENT)].a);
   case RELATIVE:
-    return mem[sp - (code & CONTENT)];
+    return mem[fp + (code & CONTENT)];
   case LITERAL: {
     grease_var_t res;
     uint64_t tmp = code & CONTENT;
@@ -109,6 +110,8 @@ grease_var_t decode( uint64_t code )
     printf("Error! in decode");
     halt();
   }
+
+  return * (grease_var_t *) 0;
 }
 
 /* decode a code */
@@ -119,10 +122,10 @@ void assign(uint64_t code, grease_var_t val )
     mem[code & CONTENT] = val;
     break;
   case INDIRECT:
-    mem[mem[code & CONTENT].a & CONTENT] = val;
+    assign(mem[fp + (code & CONTENT)].a, val);
     break;
   case RELATIVE:
-    mem[sp - (code & CONTENT)] = val;
+    mem[fp + (code & CONTENT)] = val;
     break;
   default:
      printf("Error! in vm assign: %lx\n", code & ACCESS);
@@ -780,18 +783,19 @@ void scan_( void ){
 
 void return_( void ){
   assign(reg3, decode(reg1));
-  pc = mem[sp - 1].a; // Location of return addr
-  sp = mem[sp].a;     // Location of FramePointer
+  sp = fp;
+  pc = mem[fp + 1].a; // Location of return addr
+  fp = mem[fp].a;     // Location of FramePointer
 }
 
 void era( void ){
-  uint64_t fp = sp;                 // Save last sp
-  sp += decode(reg1).a;
   mem[sp].a = fp;
+  fp = sp;                 // Save last sp
+  sp += decode(reg1).a;
 }
 
 void gosub( void ){
-  mem[sp - 1].a = pc;       // Return addr
+  mem[fp + 1].a = pc;       // Return addr
   pc = decode(reg1).a * 4;  // JMP to subroutine
 }
 
@@ -799,7 +803,7 @@ void addr( void ){
   grease_var_t res;
   switch(reg1 & ACCESS) {
   case RELATIVE:
-    res.a = sp - (reg1 & CONTENT);
+    res.a = fp + (reg1 & CONTENT);
     assign(reg3, res);
     break;
   case INDIRECT:
@@ -817,13 +821,13 @@ void addr( void ){
 }
 
 void param( void ){
-  uint64_t fp = mem[sp].a;
+  uint64_t t_fp = mem[fp].a;
   switch(reg1 & ACCESS) {
   case DIRECT:
     assign(reg3, decode(reg1));
     break;
   case RELATIVE:
-    assign(reg3, mem[fp - (reg1 & CONTENT)]);
+    assign(reg3, mem[t_fp + (reg1 & CONTENT)]);
     break;
   case INDIRECT:
     assign(reg3, decode(reg1));
@@ -960,7 +964,7 @@ int main( int argc, const char * argv[] )
   fileLen = ftell(fileExec);
   rewind(fileExec);
   fread(&maxmem, 8, 1, fileExec);
-  fread(&sp, 8, 1, fileExec);
+  fread(&fp, 8, 1, fileExec);
   // Max memory 1GB
   if (maxmem > 1000000)
   {	
@@ -968,6 +972,7 @@ int main( int argc, const char * argv[] )
     return -1;
   }
   mem = malloc(maxmem);
+  sp = fp + 2;
   fread(mem, fileLen-16, 1, fileExec);
   // running
   run();

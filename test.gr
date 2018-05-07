@@ -1,57 +1,13 @@
-import Math as M
-import from Math
-    Sqrt,
-    PI as pi
-
-interface Shape
-    fn Area(): Float
-    fn Perimeter(): Float
-
-interface Compareable
-    fn Gt(other: Compareable *): Bool
-    fn Lt(other: Compareable *): Bool
-    fn Eq(other: Compareable *): Bool
-    fn Ge(other: Compareable *): Bool
-    fn Le(other: Compareable *): Bool
-
-struct Rect : Shape, Compareable
+struct Rect
     x: Float
     y: Float
     w: Float
     h: Float
 
-fn (r: Rect) Area(): Float
-    return r.w * r.h
-
-fn (r: Rect) Perimeter(): Float
-    return 2.0 * r.w + 2.0 * r.h
-
-fn (r: Rect) Gt(other: Rect *): Bool
-    return r.Area() gt other->Area()
-
-fn (r: Rect) Lt(other: Rect *): Bool
-    return r.Area() lt other->Area()
-
-fn (r: Rect) Eq(other: Rect *): Bool
-    return r.Area() eq other->Area()
-
-fn (r: Rect) Ge(other: Rect *): Bool
-    return r.Area() ge other->Area()
-
-fn (r: Rect) Le(other: Rect *): Bool
-    return r.Area() le other->Area()
+fn area(rect: Rect *) : Float
+    return rect->w * rect->h
 
 fn main(): Int
-    var a: Int
-    var b: Int
-    var c = 0
-
-    scan a
-    scan b
-    
-    if a eq b:
-        return 0
-    
     var sqr: Rect
     
     while a lt b:
@@ -63,16 +19,7 @@ fn main(): Int
     scan sqr.w
     scan sqr.h
 
-    var shape : Shape
-    shape = sqr
-
-    print "The area is"
-    print shape.Area()
+    print area(&sqr)
     print '\n'
-    print "The perimeter is"
-    print shape.Perimeter()
-
-    if shape.Eq(sqr):
-        print "They are equal"
 
     return 0

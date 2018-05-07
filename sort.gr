@@ -3,44 +3,27 @@ var i : Int
 var j : Int
 var k : Int
 
+fn swap(m: Int, n: Int)
+	var tmp: Int
+	tmp = a[m]
+	a[m] = a[n]
+	a[n] = tmp
 
-fn merge(l : Int, m : Int, r : Int)
-	var n1 = m - l + 1
-	var n2 = r - m
-	i = 0
-	j = 0
+fn quickSort(l : Int, r : Int)
+	if r - l gt 1:
+		i = l + 1
+		j = l
 
-	i = 0
-	j = 0
-	k = l
-
-	while i lt n1 and j lt n2 :
-		if a[l + i] le a[m + 1 + j] :
-			a[k] = a[l + i]
+		while i lt r:
+			if a[l] gt a[i]:
+				j = j + 1
+				swap(i,j)
 			i = i + 1
-		else :
-			a[k] = a[m + 1 + j]
-			j = j + 1
 
-		k = k + 1
+		swap(l,j)
 
-	while i lt n1 :
-		a[k] = a[l + i]
-		i = i + 1
-		k = k + 1
-
-	while j lt n2 :
-		a[k] = a[m + 1 + j]
-		j = j + 1
-		k = k + 1
-
-fn mergeSort(l : Int, r : Int) 
-	if l lt r :
-		var m = l + (r - 1)/2
-		mergeSort(l, m)
-		mergeSort(m + 1, r)
-		merge(l, m, r)
-
+		quickSort(l, j)
+		quickSort(j + 1, r)
 
 fn main() : Int
 	var l : Int
@@ -61,7 +44,9 @@ fn main() : Int
 		print ' '
 		i = i + 1
 
-	mergeSort(0, size - 1)
+	print '\n'
+
+	quickSort(0, size)
 
 	i = 0
 	while i lt size :
