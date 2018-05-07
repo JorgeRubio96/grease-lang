@@ -98,16 +98,16 @@ def p_variable(p):
   try:
     v = var_builder.build()
     greaser.add_variable(p[2], v)
+
+    if declaration_assignment:
+      expr = greaser._operand_stack.pop()
+      greaser.push_operand(v)
+      greaser.push_operand(expr)
+      greaser.make_assign()
+      declaration_assignment = False
   except GreaseError as e:
     e.print(p.lineno(-1))
     raise
-
-  if declaration_assignment:
-    expr = greaser._operand_stack.pop()
-    greaser.push_operand(v)
-    greaser.push_operand(expr)
-    greaser.make_assign()
-    declaration_assignment = False
 
   var_builder.reset()
 

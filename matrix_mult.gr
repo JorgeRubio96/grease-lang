@@ -9,6 +9,7 @@ fn main () : Int
 	i = 0
 	j = 0
 	while i lt 4 :
+		j = 0
 		while j lt 4 :
 			a[i,j] = j
 			b[i,j] = i
@@ -19,7 +20,9 @@ fn main () : Int
 	j = 0
 	k = 0
 	while i lt 4 :
+		j = 0
 		while j lt 4 :
+			k = 0
 			while k lt 4 :
 				res[i,j] = res[i,j] + a[i,k] * b[k,j]
 				k = k + 1
@@ -29,6 +32,7 @@ fn main () : Int
 	i = 0
 	j = 0
 	while i lt 4 :
+		j = 0
 		while j lt 4 :
 			print ' '
 			print res[i,j]

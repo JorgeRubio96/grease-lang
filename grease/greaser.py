@@ -227,7 +227,7 @@ class Greaser:
   def set_arr_add(self):
     arr = self._agregate_stack.pop()
 
-    arr_addr = GreaseVar(GreaseType(GreaseTypeClass.Pointer, arr.type.type_data), arr._address, AddressingMethod.Relative)
+    arr_addr = GreaseVar(GreaseType(GreaseTypeClass.Pointer, arr.type.type_data), arr._address, arr.method)
 
     self._operand_stack.push(arr_addr)
     self.make_offset(arr.type.type_data)
@@ -338,15 +338,12 @@ class Greaser:
     if pointer.type.type_class is not GreaseTypeClass.Pointer:
       raise TypeMismatch('Expression is not a pointer')
 
-    if pointer.method is AddressingMethod.Indirect:
-      temp = GreaseVar(pointer.type_data, self._next_local_address, AddressingMethod.Indirect)
-      self._next_local_address += temp.type.size
+    # Copy address to stack in order to treat all pointers as relative addresses
+    pointer_addr = GreaseVar(pointer.type, self._next_local_address, AddressingMethod.Relative)
+    pointer_deref = GreaseVar(pointer.type, pointer_addr._address, AddressingMethod.Indirect)
 
-      self._quads.push_quad(Quadruple(Operation.EQ, pointer, result=temp))
-    else:
-      temp = GreaseVar(pointer.type_data, pointer._address, AddressingMethod.Indirect)
-    
-    self.push_operand(temp)
+    self._quads.push_quad(Quadruple(Operation.ASSIGN, pointer, result=pointer_addr))
+    self.push_operand(pointer_deref)
 
   def make_offset(self, var_type):
     self.push_operator(Operation.PLUS)
@@ -507,7 +504,7 @@ class Greaser:
   def write_to_file(self, name):
     # Initial SP location
     # Remember that there are 4 adrresses per quad
-    sp = (self._quads.next_free_quad * 4) + self._next_global_address
+    sp = (self._quads.next_free_quad * 4) + self._next_global_address + 1
 
     out_file = open(name, 'wb')
     out_file.write((200000).to_bytes(8, byteorder))
@@ -525,6 +522,9 @@ class Greaser:
   @staticmethod
   def can_assign(l, r):
     def check_type(type_l, type_r):
+      if type_l is None or type_r is None:
+        return False
+
       if type_l.type_class is GreaseTypeClass.Array:
         # ArraysTypes cannot be assigned
         return False
@@ -545,7 +545,7 @@ class Greaser:
 
       elif type_l.type_class is GreaseTypeClass.Pointer:
         # PointerTypes have type variable in type_data
-        return Greaser.can_assign(type_l.type_data, type_r.type_data)
+        return check_type(type_l.type_data, type_r.type_data)
 
       # All other type_classes may be assigned to themselves
       return type_l.type_class is type_r.type_class
