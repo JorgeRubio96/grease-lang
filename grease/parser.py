@@ -37,7 +37,7 @@ def p_program(p):
 
   # Debug print
   # TODO: Remove before release
-  greaser._quads.print_all()
+  # greaser._quads.print_all()
 
 def p_optional_global_variables(p):
   '''optional_global_variables : optional_global_variables variable
