@@ -1,4 +1,5 @@
 import ply.yacc as yacc
+import struct
 from grease.scanner import tokens
 from grease.greaser import Greaser
 from grease.core.variable import GreaseVarBuilder
@@ -387,7 +388,7 @@ def p_np_push_return(p):
   greaser.push_return(with_data=True)
 
 def p_assignment(p):
-  '''assignment : sub_struct np_push_substruct EQUALS expression'''
+  '''assignment : sub_struct EQUALS expression'''
   try:
     greaser.make_assign()
   except GreaseError as e:
@@ -448,12 +449,18 @@ def p_np_cycle(p):
 
 def p_print(p):
   '''print : PRINT expression'''
-  greaser.make_io(Operation.PRINT)
+  try:
+    greaser.make_io(Operation.PRINT)
+  except GreaseError as e:
+    e.print(p[0])
 
 def p_scan(p):
-  '''scan : SCAN sub_struct np_push_substruct'''
-  greaser.make_io(Operation.SCAN)
-
+  '''scan : SCAN sub_struct'''
+  try:
+    greaser.make_io(Operation.SCAN)
+  except GreaseError as e:
+    e.print(p[0])
+    
 def p_expression(p):
   '''expression : logic_expr np_check_or optional_or'''
   pass
@@ -613,7 +620,7 @@ def p_value(p):
   '''value : open_paren expression close_paren
            | fn_call
            | const
-           | sub_struct np_push_substruct'''
+           | sub_struct'''
   pass
 
 def p_open_paren(p):
@@ -623,14 +630,6 @@ def p_open_paren(p):
 def p_close_paren(p):
   '''close_paren : CLOSE_PAREN'''
   greaser.pop_fake_bottom()
-
-def p_np_push_substruct(p):
-  '''np_push_substruct : '''
-  try:
-    greaser.make_operand()
-  except GreaseError as e:
-    e.print(p.lineno(0))
-    raise
 
 def p_fn_call(p):
   '''fn_call : sub_struct np_fn_name OPEN_PAREN optional_arguments CLOSE_PAREN'''
@@ -747,11 +746,11 @@ def p_more_sub_struct(p):
   
 def p_sub_struct_operator(p):
   '''sub_struct_operator : DOT
-                         | ARROW'''
-  greaser.push_operator(Operation.ACCESS)  
-  
-  if p[1] is '->':
+                         | ARROW'''  
+  if p[1] == '->':
     greaser.push_operator(Operation.DEREF)
+
+  greaser.push_operator(Operation.ACCESS)  
 
 def p_const(p):
   '''const : const_int
@@ -785,7 +784,9 @@ def p_const_str(p):
 
 def p_const_real(p):
   '''const_real : CONST_REAL'''
-  greaser.push_constant(p[1], GreaseType(GreaseTypeClass.Float))
+  num = struct.pack('>f', p[1])
+  rep = struct.unpack('>l', num)[0]
+  greaser.push_constant(rep, GreaseType(GreaseTypeClass.Float))
 
 def p_true(p):
   '''true : TRUE'''

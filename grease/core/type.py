@@ -23,6 +23,6 @@ class GreaseType:
         elif self.type_class is GreaseTypeClass.Pointer:
             return '* {}'.format(self.type_data)
         elif self.type_class is GreaseTypeClass.Struct:
-            return 'Object({})'.format(self.type_data)
+            return 'Struct({})'.format(self.type_data)
         
-        return '{}'.format(self.type_class)
+        return 'Instace {}'.format(self.type_class)

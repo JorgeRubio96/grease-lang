@@ -175,9 +175,42 @@ class Greaser:
   def push_constant(self, cnst, cnst_type):
     self._operand_stack.push(GreaseVar(cnst_type, cnst, AddressingMethod.Literal))
 
-  def push_substruct(self, name):
-    self.make_operand()
-    self._last_substruct = name
+  def push_substruct(self, name):    
+    if self._operator_stack.peek() is Operation.ACCESS:
+      self._operator_stack.pop() # This operation can not be executed by VM
+      parent = self._operand_stack.peek()
+
+      if parent is None:
+        raise UndefinedVariable('Struct does not exist')
+
+      if self._operator_stack.peek() is Operation.DEREF:
+        self._operand_stack.pop() # This operation can not be executed by VM
+        if parent.type.type_class is not GreaseTypeClass.Pointer:
+          raise GreaseError('Expected pointer')
+
+        parent_addr = parent
+        parent_type = parent.type.type_data
+      else:
+        parent_addr = GreaseVar(GreaseType(GreaseTypeClass.Pointer, parent.type), parent._address, parent.method)
+        parent_type = parent.type
+
+      if parent_type.type_class is not GreaseTypeClass.Struct:
+        raise TypeMismatch('Expression must be struct')
+
+      var_table = parent_type.type_data.variables
+      var = var_table.find_variable(name)
+
+      if var is None:
+        raise UndefinedMember(name)
+
+      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AddressingMethod.Literal)
+      
+      self.push_operand(parent_addr)
+      self.push_operand(offset)
+      self.make_offset(var.type)
+    else:
+      var = self.find_variable(name)
+      self.push_operand(var)
 
   def push_operator(self, operator):
     self._operator_stack.push(operator)
@@ -197,7 +230,6 @@ class Greaser:
     self._operand_stack.push(operand)
 
   def push_agregate_stack(self):
-    self.make_operand()
     arr = self._operand_stack.pop()
     if arr.type.type_class is not GreaseTypeClass.Array:
       raise TypeMismatch("Operand is not array.")
@@ -272,38 +304,6 @@ class Greaser:
       self._next_local_address += temp.type.size
       self._quads.push_quad(Quadruple(Operation.ASSIGN, return_var, result=temp))
       self.push_operand(temp)
-
-  def make_operand(self):
-    if self._last_substruct is None:
-      return
-
-    self.check_top_operator([Operation.DEREF])
-
-    if self._operator_stack.peek() is Operation.ACCESS:
-      self._operator_stack.pop() # This operation can not be executed by VM
-      parent = self._operand_stack.peek()
-
-      if parent is None:
-        raise UndefinedVariable('Struct does not exist')
-
-      if parent.type.type_class is not GreaseTypeClass.Struct:
-        raise TypeMismatch('Expression must be struct')
-
-      var = parent.type.type_data.variables.find_variable(self._last_substruct)
-
-      if var is None:
-        raise UndefinedMember(self._last_substruct)
-      
-      self.make_addr()
-      offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AddressingMethod.Literal)
-      self.push_operand(offset)
-      
-      self.make_offset(var.type)
-    else:
-      var = self.find_variable(self._last_substruct)
-      self.push_operand(var)
-
-    self._last_substruct = None
   
   def make_fn(self):
     self.push_fake_bottom()
