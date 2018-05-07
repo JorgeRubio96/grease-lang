@@ -1,15 +1,5 @@
 fn main()
-  var a : [Int; 4]
+  var i = 1.1
+  var j = 3.3
 
-  a[0] = 1
-  a[1] = 2
-  a[2] = 3
-  a[3] = 4
-
-  var i = 0
-  while i lt 4
-    print a[i]
-    print ' '
-    i = i + 1
-
-  print '\n'
+  print i + j
