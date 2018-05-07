@@ -4,22 +4,20 @@ struct Rect
     w: Float
     h: Float
 
-fn area(rect: Rect *) : Float
-    return rect->w * rect->h
+var a: [Int; 11]
 
 fn main(): Int
-    var sqr: Rect
-    
-    while a lt b:
-        a = a + c
-        c = c + 1
-    
-    sqr.x = 0
-    sqr.y = 0
-    scan sqr.w
-    scan sqr.h
+    var i = 0
 
-    print area(&sqr)
+    while i lt 11:
+        scan a[i]
+        i = i + 1
+
+    i = 0
+    
+    while i lt 11:
+        print a[i]
+
     print '\n'
 
     return 0

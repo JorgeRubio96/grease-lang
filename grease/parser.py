@@ -29,7 +29,7 @@ precedence = (
 )
 
 def p_program(p):
-  '''program : optional_imports optional_global_variables np_jump_to_main optional_declarations'''
+  '''program : optional_imports optional_declarations np_jump_to_main optional_functions'''
   try:
     greaser.resolve_main()
   except GreaseError as e:
@@ -40,8 +40,8 @@ def p_program(p):
   # TODO: Remove before release
   # greaser._quads.print_all()
 
-def p_optional_global_variables(p):
-  '''optional_global_variables : optional_global_variables variable
+def p_optional_functions(p):
+  '''optional_functions : optional_functions function
                                | empty'''
   pass
 
@@ -86,7 +86,7 @@ def p_optional_declarations(p):
   pass
 
 def p_declaration(p):
-  '''declaration : function
+  '''declaration : variable
                  | alias
                  | struct
                  | interface'''
@@ -642,7 +642,6 @@ def p_fn_call(p):
 def p_fn_name(p):
   '''fn_name : ID'''
   try:
-    print(p[1])
     greaser.make_fn(p[1])
   except GreaseError as e:
     e.print(p.lineno(0))

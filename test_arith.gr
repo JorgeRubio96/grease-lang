@@ -1,5 +1,7 @@
 fn main()
-  var i = 1.1
-  var j = 3.3
+  var a : [Float; 5] 
+  a[1] = 1.1
 
-  print i + j
+  print a[1]
+
+  print '\n'

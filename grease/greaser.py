@@ -113,6 +113,9 @@ class Greaser:
     self._scope.add_variable(name,var)
 
   def add_function(self, name, fn, struct=None):
+    if name is None:
+      raise SyntaxError()
+
     fn.start = self._quads.next_free_quad
     # Frame pointer and return address are in the
     # first two momry locations of the stack
@@ -177,7 +180,7 @@ class Greaser:
   def push_substruct(self, name):    
     if self._operator_stack.peek() is Operation.ACCESS:
       self._operator_stack.pop() # This operation can not be executed by VM
-      parent = self._operand_stack.peek()
+      parent = self._operand_stack.pop()
 
       if parent is None:
         raise UndefinedVariable('Struct does not exist')
@@ -187,7 +190,7 @@ class Greaser:
         if parent.type.type_class is not GreaseTypeClass.Pointer:
           raise GreaseError('Expected pointer')
 
-        parent_addr = parent
+        parent_addr = GreaseVar(parent.type, parent._address, parent.method)
         parent_type = parent.type.type_data
       else:
         parent_addr = GreaseVar(GreaseType(GreaseTypeClass.Pointer, parent.type), parent._address, parent.method)
@@ -203,9 +206,10 @@ class Greaser:
         raise UndefinedMember(name)
 
       offset = GreaseVar(GreaseType(GreaseTypeClass.Int), var._address, AddressingMethod.Literal)
+      parent_addr.type.type_data = var.type
       
-      self.push_operand(parent_addr)
       self.push_operand(offset)
+      self.push_operand(parent_addr)
       self.make_offset(var.type)
     else:
       var = self.find_variable(name)
@@ -331,7 +335,7 @@ class Greaser:
     self.make_expression()
     res = self._operand_stack.pop()
     res.type = GreaseType(GreaseTypeClass.Pointer, res.type)
-    
+
     res_ref = GreaseVar(GreaseType(GreaseTypeClass.Pointer, var_type), res._address, AddressingMethod.Indirect)
     self._operand_stack.push(res_ref)
 
