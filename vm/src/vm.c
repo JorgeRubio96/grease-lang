@@ -9,8 +9,7 @@
 /* defines */
 #define DIRECT   0x0000000000000000
 #define INDIRECT 0x1000000000000000
-#define LITERAL  0X2000000000000000 //literal direct in memory location
-#define LITINDI  0X2010000000000000 //literal indirect memory location
+#define LITERAL  0X2000000000000000
 #define RELATIVE 0X3000000000000000
 #define INT      0x0000000000000000
 #define FLOAT    0x0100000000000000
@@ -58,7 +57,6 @@ typedef union {
 /* program counter */
 uint64_t pc = 0;
 uint64_t sp = 0; //Se actualiza en gosub 
-uint64_t fp = 0;
 
 /* instruction fields */
 uint64_t instrNum   = 0;
@@ -90,52 +88,22 @@ grease_var_t decode( uint64_t code )
     uint64_t tmp = code & CONTENT;
     switch(code & TYPE){
     case INT:
-      // res.i = * (int32_t *) &tmp;
-      // return res;
-      return mem[code & CONTENT];
+      res.i = * (int32_t *) &tmp;
+      return res;
     case FLOAT:
-      // res.f = * (float *) &tmp;
-      // return res;
-      return mem[code & CONTENT];
+      res.f = * (float *) &tmp;
+      return res;
     case CHAR:
-      // res.c = * (char *) &tmp;
-      // return res;
-      return mem[code & CONTENT];
+      res.c = * (char *) &tmp;
+      return res;
     case POINTER:
-      // res.a = tmp;
-      // return res;
-      return mem[code & CONTENT];
+      res.a = tmp;
+      return res;
     default:
       printf("Error! in literal");
       halt();
     }
     break;
-  case LITINDI: {
-    grease_var_t res;
-    uint64_t tmp = code & CONTENT;
-    switch(code & TYPE){
-    case INT:
-      // res.i = * (int32_t *) &tmp;
-      // return res;
-      return decode(mem[sp - tmp].a);
-    case FLOAT:
-      // res.f = * (float *) &tmp;
-      // return res;
-      return decode(mem[sp - tmp].a);
-    case CHAR:
-      // res.c = * (char *) &tmp;
-      // return res;
-      return decode(mem[sp - tmp].a);
-    case POINTER:
-      // res.a = tmp;
-      // return res;
-      return decode(mem[sp - tmp].a);
-    default:
-      printf("Error! in indirect literal");
-      halt();
-    }
-    break;
-
   }
   default:
     printf("Error! in decode");
