@@ -265,13 +265,13 @@ def p_more_struct_members(p):
   pass
 
 def p_interface(p):
-  '''interface : INTERFACE ID np_insert_interface NEW_LINE INDENT interface_function more_interface_functions DEDENT'''
+  '''interface : INTERFACE interface_name NEW_LINE INDENT interface_function more_interface_functions DEDENT'''
   pass
 
-def p_np_insert_interface(p):
-  '''np_insert_interface : '''
+def p_interface_name(p):
+  '''interface_name : ID'''
   try:
-    greaser.add_interface(p[-1], GreaseInterface())
+    greaser.add_interface(p[1], GreaseInterface())
   except GreaseError as e:
     e.print(p.lineno(0))
     raise
@@ -618,9 +618,9 @@ def p_np_check_factor(p):
   
 def p_value(p):
   '''value : open_paren expression close_paren
-           | fn_call
+           | optional_pointer_op fn_call
            | const
-           | sub_struct'''
+           | optional_pointer_op sub_struct'''
   pass
 
 def p_open_paren(p):
@@ -632,17 +632,18 @@ def p_close_paren(p):
   greaser.pop_fake_bottom()
 
 def p_fn_call(p):
-  '''fn_call : sub_struct np_fn_name OPEN_PAREN optional_arguments CLOSE_PAREN'''
+  '''fn_call : fn_name OPEN_PAREN optional_arguments CLOSE_PAREN'''
   try:
     greaser.make_gosub()
   except GreaseError as e:
     e.print(p.lineno(2))
     raise
 
-def p_np_fn_name(p):
-  '''np_fn_name : '''
+def p_fn_name(p):
+  '''fn_name : ID'''
   try:
-    greaser.make_fn()
+    print(p[1])
+    greaser.make_fn(p[1])
   except GreaseError as e:
     e.print(p.lineno(0))
     raise
@@ -666,7 +667,7 @@ def p_np_make_param(p):
     raise
 
 def p_sub_struct(p):
-  '''sub_struct : optional_pointer_op sub_struct_body more_sub_struct'''
+  '''sub_struct : sub_struct_body more_sub_struct'''
   try:
     greaser.check_top_operator([Operation.ADDR, Operation.DEREF])
   except GreaseError as e:
@@ -685,13 +686,13 @@ def p_optional_pointer_op(p):
     pass
 
 def p_sub_struct_body(p):
-  '''sub_struct_body : ID np_found_id optional_sub_index'''
+  '''sub_struct_body : substruct_name optional_sub_index'''
   pass
 
-def p_np_found_id(p):
-  '''np_found_id : '''
+def p_substruct_name(p):
+  '''substruct_name : ID'''
   try:
-    greaser.push_substruct(p[-1])
+    greaser.push_substruct(p[1])
   except GreaseError as e:
     e.print(p.lineno(0))
     raise

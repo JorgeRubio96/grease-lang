@@ -48,7 +48,6 @@ class Greaser:
     self._era_stack = Stack()
     self._quads = QuadrupleStore()
     self._param_quads = []
-    self._last_substruct = None
     self._next_local_address = 0
     self._next_global_address = 0
     self._active_fn = None
@@ -305,32 +304,14 @@ class Greaser:
       self._quads.push_quad(Quadruple(Operation.ASSIGN, return_var, result=temp))
       self.push_operand(temp)
   
-  def make_fn(self):
+  def make_fn(self, name):
     self.push_fake_bottom()
+    self._called_fn = self.find_function(name)
 
-    if self._operator_stack.peek() is Operation.DEREF:
-      self._operator_stack.pop() # This operation can not be executed by VM
-      self.make_deref()
-
-    if self._operator_stack.peek() is Operation.ACCESS:
-      self._operator_stack.pop() # This operation can not be executed by VM
-      parent = self._operand_stack.peek()
-      
-      if parent.type.type_class is not GreaseTypeClass.Struct:
-        raise TypeMismatch('Expression must be struct')
-
-      self._called_fn = parent.type.type_data.variables.find_function(self._last_substruct)
-
-      if self._called_fn is None:
-        raise UndefinedFunction(self._last_substruct)
-
-      self.make_addr() # get pointer to object
-      
-    else:
-      self._called_fn = self.find_function(self._last_substruct)
+    if self._called_fn is None:
+      raise UndefinedFunction(name)
     
     self._next_param = 0
-    self._last_substruct = None
 
   def make_deref(self):
     pointer = self._operand_stack.pop()
