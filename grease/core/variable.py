@@ -32,7 +32,7 @@ class GreaseVar:
   
   @property
   def address(self):
-    if self.type.type_class is GreaseTypeClass.Pointer:
+    if self.method is AddressingMethod.Indirect:
       return self.method | addr_type.get(self.type.type_data.type_class, other_type) | self._address
     return self.method | addr_type.get(self.type.type_class, other_type) | self._address
 

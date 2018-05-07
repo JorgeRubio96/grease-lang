@@ -80,7 +80,7 @@ grease_var_t decode( uint64_t code )
   case DIRECT:
     return mem[code & CONTENT];
   case INDIRECT:
-    return mem[mem[code & CONTENT].a & CONTENT];
+    return decode(mem[sp - (code & CONTENT)].a);
   case RELATIVE:
     return mem[sp - (code & CONTENT)];
   case LITERAL: {
@@ -155,7 +155,7 @@ void times( void ) {
       assign(reg3, res);
       break;
     case POINTER:
-      res.a = decode(reg1).i * decode(reg2).a;
+      res.a = decode(reg1).i * reg2;
       assign(reg3, res);
       break;
     default:
@@ -185,7 +185,7 @@ void times( void ) {
       assign(reg3, res);
       break;
     case POINTER:
-      res.a = reg1 * decode(reg2).a;
+      res.a = reg1 * reg2;
       assign(reg3, res);
       break;
     default:
@@ -213,7 +213,7 @@ void divide( void ) {
       assign(reg3, res);
       break;
     case POINTER:
-      res.a = decode(reg1).i / decode(reg2).a;
+      res.a = decode(reg1).i / reg2;
       assign(reg3, res);
       break;
     default:
@@ -243,7 +243,7 @@ void divide( void ) {
       assign(reg3, res);
       break;
     case POINTER:
-      res.a = reg1 / decode(reg2).a;
+      res.a = reg1 / reg2;
       assign(reg3, res);
       break;
     default:
@@ -271,7 +271,7 @@ void add( void ) {
       assign(reg3, res);
       break;
     case POINTER:
-      res.a = decode(reg1).i + decode(reg2).a;
+      res.a = decode(reg1).i + reg2;
       assign(reg3, res);
       break;
     default:
@@ -329,7 +329,7 @@ void reduct( void ) {
       assign(reg3, res);
       break;
     case POINTER:
-      res.a = decode(reg1).i - decode(reg2).a;
+      res.a = decode(reg1).i - reg2;
       assign(reg3, res);
       break;
     default:
@@ -359,7 +359,7 @@ void reduct( void ) {
       assign(reg3, res);
       break;
     case POINTER:
-      res.a = decode(reg1).a - decode(reg2).a;
+      res.a = reg1 - reg2;
       assign(reg3, res);
       break;
     default:
@@ -658,6 +658,9 @@ void q_assign( void ) {
     res.b = decode(reg1).b;
     assign(reg3, res);
     break;
+  case POINTER:
+    res.a = reg1;
+    assign(reg3, res);
   default:
     printf("Error!! in assign");
     halt();

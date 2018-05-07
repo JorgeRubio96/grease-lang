@@ -226,8 +226,10 @@ class Greaser:
 
   def set_arr_add(self):
     arr = self._agregate_stack.pop()
-    self._operand_stack.push(arr)
-    self.make_addr()
+
+    arr_addr = GreaseVar(GreaseType(GreaseTypeClass.Pointer, arr.type.type_data), arr._address, AddressingMethod.Relative)
+
+    self._operand_stack.push(arr_addr)
     self.make_offset(arr.type.type_data)
     self.pop_fake_bottom()
 
@@ -349,9 +351,11 @@ class Greaser:
   def make_offset(self, var_type):
     self.push_operator(Operation.PLUS)
     self.make_expression()
-    res = self._operand_stack.peek()
-    res.method = AddressingMethod.Indirect
-    res.type = GreaseType(GreaseTypeClass.Int, var_type)
+    res = self._operand_stack.pop()
+    res.type = GreaseType(GreaseTypeClass.Pointer, res.type)
+    
+    res_ref = GreaseVar(GreaseType(GreaseTypeClass.Pointer, var_type), res._address, AddressingMethod.Indirect)
+    self._operand_stack.push(res_ref)
 
   def make_param(self):
     arg = self._operand_stack.pop()
