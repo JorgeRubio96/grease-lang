@@ -1,34 +1,29 @@
-var a : Int
-var i = 0
-var b = 0
-
 fn fiboR(n : Int) : Int
-	if n eq 0 or n eq 1 :
-		return 1
-	else:
-		return fiboR(n - 2) + fiboR(n - 1)
+  if n eq 0 or n eq 1 :
+    return 1
+  else:
+    return fiboR(n - 2) + fiboR(n - 1)
 
 fn fibo_w(n : Int) : Int
-	var actual : Int
-	var prev = 0
-	var prevPrevVal = 1
+  var actual : Int
+  var prev = 0
+  var prevPrevVal = 1
+  var b = 0
 
-	while b lt n:
-		actual = prev + prevPrevVal
-		prev = prevPrevVal
-		prevPrevVal = actual
-		print actual
-		print ','
-		b = b + 1
+  while b lt n:
+    actual = prev + prevPrevVal
+    prev = prevPrevVal
+    prevPrevVal = actual
+    b = b + 1
 
-	print '\n'
-	return actual
+  return actual
 
 
 fn main() : Int
-	scan a
+  var a : Int
+  scan a
 
-	print fiboR(a)
-	print '\n'
+  print fibo_w(a)
+  print '\n'
 
-	return 0
+  return 0

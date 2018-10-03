@@ -24,7 +24,7 @@ fn main() : Int
 		testArr[i] = i
 		i = i + 1
 	
-	var res = binarySearch(0, 3, 5)
+	var res = binarySearch(0, 5, 1)
 	if res eq -1 : 
 		print 'N'
 		print 'o'
@@ -47,5 +47,6 @@ fn main() : Int
 		print 'e'
 		print ':'
 		print res
+		print '\n'
 
 	return 0

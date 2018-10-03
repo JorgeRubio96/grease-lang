@@ -71,7 +71,7 @@ grease_var_t * mem;
 int running = 1;
 
 void halt( void ) {
-    running = 0;
+  running = 0;
 }
 
 /* decode a code */
@@ -842,7 +842,6 @@ void param( void ){
 }
 
 void ver( void ){
-  //printf("VER: %lx >= %lx\n", decode(reg1).a, decode(reg2).a);
   if(decode(reg1).a >= decode(reg2).a) {
     printf("Error: Array out of bounds");
     halt();
@@ -939,16 +938,9 @@ void eval()
 
 void run()
 {
-  while( running )
+  while(running)
   {
-    //printf("\nDEBUG: %u\n", pc / 4);
     fetch();
-    //printf("DEBUG: %lx\n", instrNum);
-    //printf("DEBUG: %lx\n", reg1);
-    //printf("DEBUG: %lx\n", reg2);
-    //printf("DEBUG: %lx\n", reg3);
-    //printf("DEBUG: %lx\n", mem[sp].a);
-    //printf("DEBUG: %lx\n", mem[sp-1].a);
     eval();
   }
 }
@@ -958,6 +950,7 @@ int main( int argc, const char * argv[] )
   FILE *fileExec;
   uint64_t maxmem;
   long fileLen;
+  
   //check for memory
   fileExec = fopen(argv[1], "r");
   fseek(fileExec,0,SEEK_END);
@@ -965,16 +958,20 @@ int main( int argc, const char * argv[] )
   rewind(fileExec);
   fread(&maxmem, 8, 1, fileExec);
   fread(&fp, 8, 1, fileExec);
+  
   // Max memory 1GB
   if (maxmem > 1000000)
   {	
     // Err
     return -1;
   }
+  
   mem = malloc(maxmem);
   sp = fp + 2;
   fread(mem, fileLen-16, 1, fileExec);
+  
   // running
   run();
+  
   return 0;
 }

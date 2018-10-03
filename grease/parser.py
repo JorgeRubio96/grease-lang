@@ -14,7 +14,6 @@ from grease.core.dimension import GreaseDimension
 greaser = Greaser()
 
 #Quads global structures
-
 struct_builder = GreaseStructBuilder()
 var_builder = GreaseVarBuilder()
 fn_builder = GreaseFnBuilder()
@@ -28,6 +27,7 @@ precedence = (
   ('left', 'DOT', 'ARROW')
 )
 
+
 def p_program(p):
   '''program : optional_imports optional_declarations np_jump_to_main optional_functions'''
   try:
@@ -40,15 +40,18 @@ def p_program(p):
   # TODO: Remove before release
   # greaser._quads.print_all()
 
+
 def p_optional_functions(p):
   '''optional_functions : optional_functions function
                                | empty'''
   pass
 
+
 def p_np_jump_to_main(p):
   '''np_jump_to_main : '''
   # Agregar primer cuadruplo salto a main
   greaser.make_call_main()
+
 
 # Permite tener 0 o mas import statements
 # Left recursive
@@ -57,27 +60,33 @@ def p_optional_imports(p):
                       | empty'''
   pass
 
+
 def p_import(p):
   '''import : IMPORT import_body'''
+
 
 def p_import_body(p):
   '''import_body : import_decl NEW_LINE
                  | FROM ID NEW_LINE INDENT import_decl import_more_ids NEW_LINE DEDENT'''
   pass
 
+
 def p_import_decl(p):
   '''import_decl : ID optional_import_as'''
   pass
+
 
 def p_optional_import_as(p):
   '''optional_import_as : AS ID
                         | empty'''
   pass
 
+
 def p_import_more_ids(p):
   '''import_more_ids : import_more_ids COMMA NEW_LINE import_decl
                      | empty'''
   pass
+
 
 # Permite tener 0 o mas declaraciones
 def p_optional_declarations(p):
@@ -85,12 +94,14 @@ def p_optional_declarations(p):
                            | empty'''
   pass
 
+
 def p_declaration(p):
   '''declaration : variable
                  | alias
                  | struct
                  | interface'''
   pass
+
 
 def p_variable(p):
   '''variable : VAR ID variable_body NEW_LINE'''
@@ -111,6 +122,7 @@ def p_variable(p):
     raise
 
   var_builder.reset()
+
 
 def p_variable_body(p):
   '''variable_body : COLON compound_type
@@ -135,9 +147,11 @@ def p_function(p):
     e.print(1)
     raise
 
+
 def p_function_id(p):
   '''function_id : ID'''
   fn_builder.add_name(p[1])
+
 
 def p_optional_method_declaration(p):
   '''optional_method_declaration : OPEN_PAREN ID COLON ID CLOSE_PAREN
@@ -156,10 +170,12 @@ def p_optional_method_declaration(p):
       e.print(p.lineno(2))
       raise
 
+
 def p_optional_params(p):
   '''optional_params : param more_params
                      | empty'''
   pass
+
 
 def p_param(p):
   '''param : ID COLON basic_type'''
@@ -172,10 +188,12 @@ def p_param(p):
     e.print(p.lineno(1))
     raise
 
+
 def p_more_params(p):
   '''more_params : more_params COMMA param
                  | empty'''
   pass
+
 
 def p_optional_return_type(p):
   '''optional_return_type : COLON basic_type
@@ -186,6 +204,7 @@ def p_optional_return_type(p):
     except GreaseError as e:
       e.print(p.lineno(1))
       raise
+
 
 def p_np_insert_function(p):
   '''np_insert_function : '''
@@ -198,21 +217,26 @@ def p_np_insert_function(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_alias(p):
   '''alias : ALIAS compound_type AS ID NEW_LINE'''
   pass
+
 
 def p_struct(p):
   '''struct : STRUCT struct_id optional_struct_interfaces NEW_LINE np_insert_struct INDENT struct_member more_struct_members DEDENT'''
   struct_builder.reset()
 
+
 def p_struct_error(p):
   '''struct : STRUCT struct_id COLON error'''
   struct_builder.reset()
 
+
 def p_struct_id(p):
   '''struct_id : ID'''
   struct_builder.add_name(p[1])
+
 
 def p_optional_struct_interfaces(p):
   '''optional_struct_interfaces : COLON more_interfaces interface_id
@@ -223,6 +247,7 @@ def p_optional_struct_interfaces(p):
     vtable = var_builder.build()
     struct_builder.add_member('vtable', vtable)
 
+
 def p_interface_id(p):
   '''interface_id : ID'''
   try:
@@ -232,10 +257,12 @@ def p_interface_id(p):
     e.print(p.lineno(1))
     raise
 
+
 def p_more_interfaces(p):
   '''more_interfaces : more_interfaces interface_id COMMA
                      | empty'''
   pass
+
 
 def p_np_insert_struct(p):
   '''np_insert_struct : '''
@@ -249,6 +276,7 @@ def p_np_insert_struct(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_struct_member(p):
   '''struct_member : ID COLON basic_type NEW_LINE'''
   try:
@@ -259,14 +287,17 @@ def p_struct_member(p):
     e.print(p.lineno(1))
     raise
 
+
 def p_more_struct_members(p):
   '''more_struct_members : more_struct_members struct_member
                          | empty'''
   pass
 
+
 def p_interface(p):
   '''interface : INTERFACE interface_name NEW_LINE INDENT interface_function more_interface_functions DEDENT'''
   pass
+
 
 def p_interface_name(p):
   '''interface_name : ID'''
@@ -276,32 +307,39 @@ def p_interface_name(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_interface_error(p):
   '''interface : INTERFACE ID error'''
   pass
 
+
 def p_interface_function(p):
   '''interface_function : FN ID OPEN_PAREN optional_interface_fn_params CLOSE_PAREN optional_return_type NEW_LINE'''
   pass
+
 
 def p_optional_interface_fn_params(p):
   '''optional_interface_fn_params : interface_fn_param more_interface_fn_params
                                   | empty'''
   pass
 
+
 def p_interface_fn_param(p):
   '''interface_fn_param : ID COLON basic_type'''
   pass
+
 
 def p_more_interface_fn_params(p):
   '''more_interface_fn_params : more_interface_fn_params COMMA interface_fn_param
                               | empty'''
   pass
 
+
 def p_more_interface_functions(p):
   '''more_interface_functions : more_interface_functions interface_function
                               | empty'''
   pass
+
 
 def p_basic_type(p):
   '''basic_type : INT
@@ -314,6 +352,7 @@ def p_basic_type(p):
     p[0] = Greaser.basic_type_from_text(p[1])
   else:
     p[0] = p[1]
+
 
 def p_compound_type(p):
   '''compound_type : ID
@@ -328,9 +367,11 @@ def p_compound_type(p):
   else:
     p[0] = p[1]
 
+
 def p_pointer(p):
   '''pointer : compound_type TIMES'''
   p[0] = GreaseType(GreaseTypeClass.Pointer, p[1])
+
 
 def p_array(p):
   '''array : OPEN_BRACK basic_type SEMICOLON CONST_INT array_more_dimens CLOSE_BRACK'''
@@ -347,6 +388,7 @@ def p_array(p):
   
   p[0] = GreaseType(GreaseTypeClass.Array, p[2], dimens, total_size)
 
+
 def p_array_more_dimens(p):
   '''array_more_dimens : array_more_dimens COMMA CONST_INT
                        | empty'''
@@ -355,23 +397,28 @@ def p_array_more_dimens(p):
   else:
     p[0] = []
 
+
 def p_block(p):
   '''block : INDENT block_body DEDENT'''
   pass
+
 
 def p_block_body(p):
   '''block_body : block_body block_line
                 | empty'''
   pass
 
+
 def p_block_line(p):
   '''block_line : statement
                 | variable'''
   pass
 
+
 def p_statement(p):
   '''statement : statement_body'''
   pass
+
 
 def p_statement_body(p):
   '''statement_body : assignment NEW_LINE
@@ -380,12 +427,15 @@ def p_statement_body(p):
                     | RETURN expression np_push_return NEW_LINE
                     | fn_call NEW_LINE
                     | condition
-                    | cycle'''
+                    | cycle
+                    | for'''
   pass
+
 
 def p_np_push_return(p):
   '''np_push_return : '''
   greaser.push_return(with_data=True)
+
 
 def p_assignment(p):
   '''assignment : sub_struct EQUALS expression'''
@@ -395,9 +445,11 @@ def p_assignment(p):
     e.print(p.lineno(2))
     raise
 
+
 def p_condition(p):
   '''condition : IF expression np_condition COLON NEW_LINE block optional_else'''
   greaser.fill_jump()
+
 
 def p_np_condition(p):
   '''np_condition : '''
@@ -413,9 +465,11 @@ def p_optional_else(p):
                    | empty'''
   pass
 
+
 def p_optional_else_error(p):
   '''optional_else : ELSE np_found_else COLON NEW_LINE error'''
   pass
+
 
 def p_np_found_else(p):
   '''np_found_else : '''
@@ -426,10 +480,33 @@ def p_np_found_else(p):
     e.print(p.lineno(0))
     raise
 
+
+def p_for(p):
+  '''for : FOR iterable_item IN iterable optional_while COLON NEW_LINE block'''
+  pass
+
+
+def p_iterable_item(p):
+  '''iterable_item : ID'''
+  pass
+
+
+def p_iterable(p):
+  '''iterable : expression'''
+  pass
+
+
+def p_optional_while(p):
+  '''optional_while : WHILE expression
+                    | empty'''
+  pass
+
+
 def p_cycle(p):
   '''cycle : WHILE np_begin_cycle expression np_cycle COLON NEW_LINE block '''
   greaser.fill_jump(1)
   greaser.make_jump(to_stack=True)
+
 
 def p_np_begin_cycle(p):
   '''np_begin_cycle : '''
@@ -439,6 +516,7 @@ def p_np_begin_cycle(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_np_cycle(p):
   '''np_cycle : '''
   try:
@@ -447,12 +525,14 @@ def p_np_cycle(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_print(p):
   '''print : PRINT expression'''
   try:
     greaser.make_io(Operation.PRINT)
   except GreaseError as e:
     e.print(p[0])
+
 
 def p_scan(p):
   '''scan : SCAN sub_struct'''
@@ -461,9 +541,11 @@ def p_scan(p):
   except GreaseError as e:
     e.print(p[0])
     
+
 def p_expression(p):
   '''expression : logic_expr np_check_or optional_or'''
   pass
+
 
 def p_np_check_or(p):
   '''np_check_or : '''
@@ -472,14 +554,17 @@ def p_np_check_or(p):
   except GreaseError as e:
     e.print(p.lineno(0))
 
+
 def p_optional_or(p):
   '''optional_or : or expression
                  | empty'''
   pass
 
+
 def p_or(p):
   '''or : OR'''
   greaser.push_operator(Operation.OR)
+
 
 def p_logic_expr(p):
   '''logic_expr : negation np_check_and optional_and'''
@@ -488,6 +573,7 @@ def p_logic_expr(p):
   else:
     p[0] = p[2]
 
+
 def p_np_check_and(p):
   '''np_check_and : '''
   try:
@@ -495,18 +581,22 @@ def p_np_check_and(p):
   except GreaseError as e:
     e.print(p.lineno(0))
 
+
 def p_optional_and(p):
   '''optional_and : and logic_expr
                   | empty'''
   pass    
 
+
 def p_and(p):
   '''and : AND'''
   greaser.push_operator(Operation.AND)
 
+
 def p_negation(p):
   '''negation : np_check_negation optional_not rel_expr'''
   pass
+
 
 def p_np_check_negation(p):
   '''np_check_negation : '''
@@ -515,20 +605,24 @@ def p_np_check_negation(p):
   except GreaseError as e:
     e.print(p.lineno(0))
 
+
 def p_optional_not(p):
   '''optional_not : NOT
                   | empty'''
   if p[1] is not None:
     greaser.push_operator(Operation.NOT)
 
+
 def p_rel_expr(p):
   '''rel_expr : arith_expr np_check_comparison np_check_direct_not optional_comparison '''
   pass
+
 
 def p_optional_comparison(p):
   '''optional_comparison : optional_not comparison_operator rel_expr
                          | empty'''
   pass
+
 
 def p_comparison_operator(p):
   '''comparison_operator : EQ
@@ -538,12 +632,14 @@ def p_comparison_operator(p):
                          | LE'''
   greaser.push_operator(greaser.operator_from_text(p[1]))
 
+
 def p_np_check_comparison(p):
   '''np_check_comparison : '''
   try:
     greaser.check_top_operator([Operation.EQ, Operation.GT, Operation.LT, Operation.GE, Operation.LE])
   except GreaseError as e:
     e.print(p.lineno(0))
+
 
 def p_np_check_direct_not(p):
   '''np_check_direct_not : '''
@@ -552,20 +648,24 @@ def p_np_check_direct_not(p):
   except GreaseError as e:
     e.print(p.lineno(0))
 
+
 def p_arith_expr(p):
   '''arith_expr : term np_check_arith_expr optional_arith_op'''
   pass
+
 
 def p_optional_arith_op(p):
   '''optional_arith_op : arith_operator arith_expr
                        | empty'''
   pass
 
+
 def p_arith_operator(p):
   '''arith_operator : PLUS
                     | MINUS'''
   operator = greaser.operator_from_text(p[1])
   greaser.push_operator(operator)
+
 
 def p_np_check_arith_expr(p):
   '''np_check_arith_expr : '''
@@ -575,14 +675,17 @@ def p_np_check_arith_expr(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_term(p):
   '''term : factor np_check_term optional_mult_div'''
   pass
+
 
 def p_optional_mult_div(p):
   '''optional_mult_div : mult_operator term
                        | empty'''
   pass
+
 
 def p_mult_operator(p):
   '''mult_operator : TIMES
@@ -598,15 +701,18 @@ def p_np_check_term(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_factor(p):
   '''factor : optional_sign value np_check_factor'''
   pass
+
 
 def p_optional_sign(p):
   '''optional_sign : MINUS %prec UMINUS
                     | empty'''
   if p[1] is not None:
     greaser.push_operator(Operation.U_MINUS)
+
 
 def p_np_check_factor(p):
   '''np_check_factor : '''
@@ -616,6 +722,7 @@ def p_np_check_factor(p):
     e.print(p.lineno(0))
     raise
   
+
 def p_value(p):
   '''value : open_paren expression close_paren
            | optional_pointer_op fn_call
@@ -623,13 +730,16 @@ def p_value(p):
            | optional_pointer_op sub_struct'''
   pass
 
+
 def p_open_paren(p):
   '''open_paren : OPEN_PAREN'''
   greaser.push_fake_bottom()
 
+
 def p_close_paren(p):
   '''close_paren : CLOSE_PAREN'''
   greaser.pop_fake_bottom()
+
 
 def p_fn_call(p):
   '''fn_call : fn_name OPEN_PAREN optional_arguments CLOSE_PAREN'''
@@ -639,6 +749,7 @@ def p_fn_call(p):
     e.print(p.lineno(2))
     raise
 
+
 def p_fn_name(p):
   '''fn_name : ID'''
   try:
@@ -647,15 +758,18 @@ def p_fn_name(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_optional_arguments(p):
   '''optional_arguments : expression np_make_param more_arguments
                         | empty'''
   pass
 
+
 def p_more_arguments(p):
   '''more_arguments : more_arguments COMMA expression np_make_param
                     | empty'''
   pass
+
 
 def p_np_make_param(p):
   '''np_make_param : '''
@@ -665,6 +779,7 @@ def p_np_make_param(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_sub_struct(p):
   '''sub_struct : sub_struct_body more_sub_struct'''
   try:
@@ -672,6 +787,7 @@ def p_sub_struct(p):
   except GreaseError as e:
     e.print(p.lineno(2))
     raise
+
 
 def p_optional_pointer_op(p):
   '''optional_pointer_op : AMP
@@ -684,9 +800,11 @@ def p_optional_pointer_op(p):
     greaser.push_operand(Operation.DEREF)
     pass
 
+
 def p_sub_struct_body(p):
   '''sub_struct_body : substruct_name optional_sub_index'''
   pass
+
 
 def p_substruct_name(p):
   '''substruct_name : ID'''
@@ -696,15 +814,18 @@ def p_substruct_name(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_optional_sub_index(p):
     '''optional_sub_index : OPEN_BRACK np_found_array expression np_dim_exp more_sub_index CLOSE_BRACK np_arr_add
                           | empty'''
     pass
 
+
 def p_more_sub_index(p):
   '''more_sub_index : more_sub_index COMMA np_next_sub_index expression np_dim_exp
                     | empty'''
   pass
+
 
 def p_np_found_array(p):
   '''np_found_array : '''
@@ -714,6 +835,7 @@ def p_np_found_array(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_np_dim_exp(p):
   '''np_dim_exp : '''
   try:
@@ -722,6 +844,7 @@ def p_np_dim_exp(p):
     e.print(p.lineno(0))
     raise
 
+
 def p_np_next_sub_index(p):
   '''np_next_sub_index : '''
   try:
@@ -729,6 +852,7 @@ def p_np_next_sub_index(p):
   except GreaseError as e:
     e.print(p.lineno(0))
     raise
+
 
 def p_np_arr_add(p):
   '''np_arr_add : '''
@@ -744,6 +868,7 @@ def p_more_sub_struct(p):
                      | empty'''
   pass
   
+
 def p_sub_struct_operator(p):
   '''sub_struct_operator : DOT
                          | ARROW'''  
@@ -751,6 +876,7 @@ def p_sub_struct_operator(p):
     greaser.push_operator(Operation.DEREF)
 
   greaser.push_operator(Operation.ACCESS)  
+
 
 def p_const(p):
   '''const : const_int
@@ -760,6 +886,7 @@ def p_const(p):
            | true
            | false'''
   pass
+
 
 def p_const_int(p):
   '''const_int : CONST_INT'''
@@ -771,10 +898,12 @@ def p_const_int(p):
 
   greaser.push_constant(val, GreaseType(GreaseTypeClass.Int))
 
+
 def p_const_char(p):
   '''const_char : CONST_CHAR'''
   val = bytes(p[1], 'utf-8').decode('unicode_escape')
   greaser.push_constant(ord(val), GreaseType(GreaseTypeClass.Char))
+
 
 def p_const_str(p):
   '''const_str : CONST_STR'''
@@ -782,28 +911,34 @@ def p_const_str(p):
   str_t.size = len(p[1]) + 1 # Don't forget null terminator!
   greaser.push_constant(p[1], str_t)
 
+
 def p_const_real(p):
   '''const_real : CONST_REAL'''
   num = struct.pack('>f', p[1])
   rep = struct.unpack('>l', num)[0]
   greaser.push_constant(rep, GreaseType(GreaseTypeClass.Float))
 
+
 def p_true(p):
   '''true : TRUE'''
   greaser.push_constant(True, GreaseType(GreaseTypeClass.Bool))
+
 
 def p_false(p):
   '''false : FALSE'''
   greaser.push_constant(False, GreaseType(GreaseTypeClass.Bool))
 
+
 def p_empty(p):
   'empty :'
   pass
+
 
 def p_error(p):
   if p is None:
     print("Unexpected EOF")
   else:
     print("Unexpected {} at line {}".format(p.type, p.lexer.lineno))
+
 
 grease_parser = yacc.yacc()

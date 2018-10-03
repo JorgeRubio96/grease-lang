@@ -39,21 +39,25 @@ class Greaser:
     self._global_vars = VariableTable()
     self._global_fns = FunctionDirectory()
     self._structs = StructTable()
-    self._scope = self._global_vars
     self._interfaces = InterfaceTable()
+    self._quads = QuadrupleStore()
+    
     self._operator_stack = Stack()
     self._operand_stack = Stack()
     self._jump_stack = Stack()
     self._agregate_stack = Stack()
     self._era_stack = Stack()
-    self._quads = QuadrupleStore()
+    
+    self._scope = self._global_vars
     self._param_quads = []
+   
     self._next_local_address = 0
     self._next_global_address = 0
-    self._active_fn = None
-    self._called_fn = None
     self._next_param = 0
     self._dim = 0
+    
+    self._active_fn = None
+    self._parsing_fn = None
 
   def find_function(self, name):
     fn = self._global_fns.find_function(name)
@@ -279,14 +283,14 @@ class Greaser:
   def make_gosub(self):
     self.pop_fake_bottom()
 
-    if self._next_param < len(self._called_fn.param_types):
+    if self._next_param < len(self._parsing_fn.param_types):
       raise UndefinedFunction('Invalid function signature. Check argument count.')
 
     # Recursive functions dont have their size
     # calculated yet. Add them to era stack.
-    if self._called_fn is self._active_fn:
+    if self._parsing_fn is self._active_fn:
       self._era_stack.push(self._quads.next_free_quad)
-    size = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.size, AddressingMethod.Literal)
+    size = GreaseVar(GreaseType(GreaseTypeClass.Int), self._parsing_fn.size, AddressingMethod.Literal)
 
     # Make ERA
     era = Quadruple(Operation.ERA, size)
@@ -297,12 +301,12 @@ class Greaser:
 
     self._param_quads = []
     
-    start = GreaseVar(GreaseType(GreaseTypeClass.Int), self._called_fn.start, AddressingMethod.Literal)
+    start = GreaseVar(GreaseType(GreaseTypeClass.Int), self._parsing_fn.start, AddressingMethod.Literal)
     gosub = Quadruple(Operation.GOSUB, start)
     self._quads.push_quad(gosub)
 
-    if self._called_fn.return_type is not None:
-      return_var = GreaseVar(self._called_fn.return_type, self._next_global_address)
+    if self._parsing_fn.return_type is not None:
+      return_var = GreaseVar(self._parsing_fn.return_type, self._next_global_address)
       temp = GreaseVar(return_var.type, self._next_local_address, AddressingMethod.Relative)
       self._next_local_address += temp.type.size
       self._quads.push_quad(Quadruple(Operation.ASSIGN, return_var, result=temp))
@@ -310,9 +314,9 @@ class Greaser:
   
   def make_fn(self, name):
     self.push_fake_bottom()
-    self._called_fn = self.find_function(name)
+    self._parsing_fn = self.find_function(name)
 
-    if self._called_fn is None:
+    if self._parsing_fn is None:
       raise UndefinedFunction(name)
     
     self._next_param = 0
@@ -341,7 +345,7 @@ class Greaser:
 
   def make_param(self):
     arg = self._operand_stack.pop()
-    param_type = self._called_fn.param_types[self._next_param]
+    param_type = self._parsing_fn.param_types[self._next_param]
 
     # Params start at the third address location in the stack.
     # The first two are occupied by the previous FP and PC

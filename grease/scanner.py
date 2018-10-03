@@ -29,7 +29,9 @@ reserved = {
     'from': 'FROM',
     'return': 'RETURN',
     'true': 'TRUE',
-    'false': 'FALSE'
+    'false': 'FALSE',
+    'for': 'FOR',
+    'in': 'IN'
 }
 
 tokens = [
