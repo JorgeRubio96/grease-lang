@@ -1,0 +1,5 @@
+fn main()
+    var a: Char
+    while a not eq '\n':
+        scan a
+        print a
